@@ -66,6 +66,35 @@ window.selectOption = (id, value, type) => {
     renderStep();
 };
 
+// Supabase Configuration (Replace with your keys)
+const SUPABASE_URL = 'https://SUA_URL_DO_SUPABASE.supabase.co';
+const SUPABASE_KEY = 'SUA_ANON_KEY_DO_SUPABASE';
+const supabaseClient = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY) : null;
+
+async function saveLead(data) {
+    if (!supabaseClient) {
+        console.warn('Supabase not initialized');
+        return;
+    }
+
+    try {
+        const { error } = await supabaseClient
+            .from('leads')
+            .insert([
+                {
+                    whatsapp: data.whatsapp,
+                    email: data.email,
+                    metadata: data // Full questionnaire progress
+                }
+            ]);
+
+        if (error) throw error;
+        console.log('Lead salvo com sucesso!');
+    } catch (err) {
+        console.error('Erro ao salvar lead:', err.message);
+    }
+}
+
 function nextStep() {
     // Collect input data
     const q = questions[currentStep];
@@ -75,6 +104,11 @@ function nextStep() {
         q.inputs.forEach(input => {
             userData[input.id] = document.getElementById(input.id).value;
         });
+
+        // If this is the contact step, save the lead immediately
+        if (q.id === 'contato') {
+            saveLead(userData);
+        }
     }
 
     if (currentStep < questions.length - 1) {
