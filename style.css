@@ -570,18 +570,27 @@ footer {
 }
 
 .med-card-img {
-    height: 250px;
-    background-color: #f7941d;
-    /* Orange from print */
+    height: 300px;
+    /* Taller image area */
+    background-color: #ffb703;
+    /* Vibrant Yellow/Orange from print */
     display: flex;
     align-items: center;
     justify-content: center;
-    margin-bottom: 20px;
+    margin-bottom: 25px;
+    position: relative;
+    border-radius: 20px 20px 0 0;
 }
 
 .med-card-img img {
-    max-height: 80%;
+    max-height: 85%;
+    width: auto;
     object-fit: contain;
+    transition: transform 0.3s ease;
+}
+
+.med-card:hover .med-card-img img {
+    transform: scale(1.05);
 }
 
 .med-card-content {
@@ -589,13 +598,16 @@ footer {
 }
 
 .med-card-content h3 {
-    font-size: 1.4rem;
-    margin-bottom: 10px;
+    font-size: 1.6rem;
+    font-weight: 800;
+    margin-bottom: 12px;
     color: var(--text-dark);
+    letter-spacing: -0.5px;
 }
 
 .med-card-content p {
-    font-size: 0.9rem;
+    font-size: 1rem;
+    line-height: 1.5;
     color: var(--text-muted);
 }
 
@@ -608,18 +620,25 @@ footer {
 }
 
 .glp1-image {
-    background: #fdf5ef;
-    border-radius: 40px;
-    padding: 40px;
+    background: #fff7f1;
+    /* Maori Beige background */
+    border-radius: 30px;
+    padding: 0;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
+    overflow: hidden;
 }
 
 .glp1-image img {
-    max-width: 100%;
-    border-radius: 20px;
+    width: 100%;
+    height: auto;
+    object-fit: cover;
+}
+
+max-width: 100%;
+border-radius: 20px;
 }
 
 .glp1-info {
