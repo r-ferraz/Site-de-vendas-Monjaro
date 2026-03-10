@@ -55,22 +55,39 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    // MeuBeme Accordion
-    const accItems = document.querySelectorAll('.mb-acc-item');
-    accItems.forEach(item => {
+    // Generic Accordion Handler (handles both MB and GLP1)
+    const allAccordions = document.querySelectorAll('.mb-acc-item');
+    allAccordions.forEach(item => {
         const header = item.querySelector('.mb-acc-header');
         header.addEventListener('click', () => {
-            accItems.forEach(otherItem => {
+            const parent = item.parentElement;
+            const siblingItems = parent.querySelectorAll('.mb-acc-item');
+
+            siblingItems.forEach(otherItem => {
                 if (otherItem !== item) {
                     otherItem.classList.remove('active');
-                    otherItem.querySelector('span').textContent = '+';
+                    const otherSpan = otherItem.querySelector('span');
+                    if (otherSpan) otherSpan.textContent = '+';
+
+                    // Specific for GLP1 section if inline style exists
+                    const otherContent = otherItem.querySelector('.mb-acc-content');
+                    if (otherContent && otherContent.style.display === 'block') {
+                        otherContent.style.display = 'none';
+                    }
                 }
             });
+
             item.classList.toggle('active');
             const span = header.querySelector('span');
-            span.textContent = item.classList.contains('active') ? '−' : '+';
+            if (span) span.textContent = item.classList.contains('active') ? '−' : '+';
+
+            // Toggle visibility manually for items with inline display override
+            const content = item.querySelector('.mb-acc-content');
+            if (content) {
+                content.style.display = item.classList.contains('active') ? 'block' : 'none';
+            }
         });
     });
 
-    console.log('Akin site initialized successfully.');
+    console.log('Maori site initialized successfully.');
 });
