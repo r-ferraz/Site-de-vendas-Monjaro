@@ -61,16 +61,17 @@ window.akinQuestions = [
         type: 'input_group',
         question: 'Como podemos falar com você?',
         inputs: [
+            { label: 'Nome Completo', type: 'text', id: 'nome', placeholder: 'Seu nome completo' },
             { label: 'WhatsApp', type: 'tel', id: 'whatsapp', placeholder: '(00) 00000-0000' },
             { label: 'E-mail', type: 'email', id: 'email', placeholder: 'seu@email.com' }
         ]
     },
     {
-        id: 'nascimento',
+        id: 'data_nasc',
         type: 'input',
         question: 'Qual sua data de nascimento?',
         inputType: 'date',
-        id: 'data_nasc'
+        placeholder: 'dd/mm/aaaa'
     },
     {
         id: 'sexo',
@@ -127,7 +128,7 @@ window.akinQuestions = [
         question: 'O que é mais importante para você no tratamento?',
         options: [
             'Minimizar efeitos colaterais',
-            'Maximizar a perda de perda de peso',
+            'Maximizar a perda de peso',
             'Equilíbrio entre ambos'
         ]
     }

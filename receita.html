@@ -90,6 +90,21 @@
 
             <video id="camera-view" autoplay playsinline></video>
 
+            <div id="lead-form" style="text-align: left; margin-top: 20px;">
+                <div class="input-group" style="margin-bottom: 15px;">
+                    <label style="display:block; margin-bottom:5px; font-weight:500;">Nome Completo</label>
+                    <input type="text" id="lead-name" class="q-input" placeholder="Seu nome completo">
+                </div>
+                <div class="input-group" style="margin-bottom: 15px;">
+                    <label style="display:block; margin-bottom:5px; font-weight:500;">E-mail</label>
+                    <input type="email" id="lead-email" class="q-input" placeholder="seu@email.com">
+                </div>
+                <div class="input-group" style="margin-bottom: 15px;">
+                    <label style="display:block; margin-bottom:5px; font-weight:500;">WhatsApp</label>
+                    <input type="tel" id="lead-whatsapp" class="q-input" placeholder="(00) 00000-0000">
+                </div>
+            </div>
+
             <div class="upload-box" id="drop-zone" onclick="document.getElementById('file-input').click()">
                 <div class="upload-icon">📄</div>
                 <div style="font-weight: 500;">Clique para escolher um arquivo ou tire uma foto</div>
@@ -118,7 +133,13 @@
         </div>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
+        // Supabase Configuration
+        const SUPABASE_URL = 'https://pzewkvmaewnijwhxkqaj.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB6ZXdrdm1hZXduaWp3aHhrcWFqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMxNjk0ODQsImV4cCI6MjA4ODc0NTQ4NH0.a42vFvm5vUcZ3euBUoNW_QuWM9MKPW2W7ZvcCyl_P4Y';
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
         const fileInput = document.getElementById('file-input');
         const dropZone = document.getElementById('drop-zone');
         const previewBox = document.getElementById('preview-box');
@@ -127,12 +148,15 @@
         const sendBtn = document.getElementById('send-btn');
         const video = document.getElementById('camera-view');
 
+        let selectedFile = null;
+
         fileInput.addEventListener('change', function (e) {
             handleFile(e.target.files[0]);
         });
 
         function handleFile(file) {
             if (!file) return;
+            selectedFile = file;
 
             previewBox.style.display = 'block';
             video.style.display = 'none';
@@ -145,7 +169,7 @@
                 pdfPreview.style.display = 'none';
                 imagePreview.style.display = 'block';
                 const reader = new FileReader();
-                reader.onload = funct ion(e) {
+                reader.onload = function (e) {
                     imagePreview.src = e.target.result;
                 }
                 reader.readAsDataURL(file);
@@ -164,9 +188,61 @@
             }
         }
 
-        sendBtn.addEventListener('click', func tion() {
-            alert('Receita enviada com sucesso! Nossa equipe iniciará a transcrição imediata.');
-            window.location.href = 'index.html';
+        sendBtn.addEventListener('click', async function () {
+            const name = document.getElementById('lead-name').value;
+            const email = document.getElementById('lead-email').value;
+            const whatsapp = document.getElementById('lead-whatsapp').value;
+
+            if (!name || !email || !whatsapp || !selectedFile) {
+                alert('Por favor, preencha todos os campos e selecione o arquivo da receita.');
+                return;
+            }
+
+            sendBtn.disabled = true;
+            sendBtn.textContent = 'Enviando...';
+
+            try {
+                // 1. Upload file to Supabase Storage
+                const fileExt = selectedFile.name.split('.').pop();
+                const fileName = `${Date.now()}.${fileExt}`;
+                const filePath = `prescriptions/${fileName}`;
+
+                const { data: uploadData, error: uploadError } = await supabase.storage
+                    .from('prescriptions')
+                    .upload(filePath, selectedFile);
+
+                if (uploadError) throw uploadError;
+
+                // Get public URL
+                const { data: urlData } = supabase.storage
+                    .from('prescriptions')
+                    .getPublicUrl(filePath);
+
+                const fileUrl = urlData.publicUrl;
+
+                // 2. Save lead data to table
+                const { error: dbError } = await supabase
+                    .from('leads')
+                    .insert([
+                        {
+                            nome: name,
+                            email: email,
+                            whatsapp: whatsapp,
+                            arquivo_url: fileUrl,
+                            status: 'Novo',
+                            tipo_origem: 'Receita'
+                        }
+                    ]);
+
+                if (dbError) throw dbError;
+
+                alert('Receita enviada com sucesso! Nossa equipe iniciará a transcrição imediata.');
+                window.location.href = 'index.html';
+            } catch (err) {
+                alert('Erro ao enviar: ' + err.message);
+                sendBtn.disabled = false;
+                sendBtn.textContent = 'Enviar Receita';
+            }
         });
 
         // Drag and Drop
@@ -176,7 +252,7 @@
             e.preventDefault();
             dropZone.style.borderColor = '#CBD5E0';
             handleFile(e.dataTransfer.files[0]);
-
+        });
     </script>
 </body>
 

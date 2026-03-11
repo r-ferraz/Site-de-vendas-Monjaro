@@ -82,8 +82,11 @@ async function saveLead(data) {
             .from('leads')
             .insert([
                 {
+                    nome: data.nome || 'Cliente Questionário',
                     whatsapp: data.whatsapp,
                     email: data.email,
+                    status: 'Novo',
+                    tipo_origem: 'Questionário',
                     metadata: data // Full questionnaire progress
                 }
             ]);
@@ -154,7 +157,7 @@ function showResults() {
     planDetails.innerHTML = `
         <div style="text-align: center; background: var(--accent-blue); padding: 20px; border-radius: 16px; margin-bottom: 20px;">
             <p style="font-size: 1.1rem;">Seu IMC é <strong>${imc}</strong></p>
-            <p>Com o plano Akin, você poderá chegar aos <strong>${meta.toFixed(1)}kg</strong> em aproximadamente 10 meses.</p>
+            <p>Com o plano Maori, você poderá chegar aos <strong>${meta.toFixed(1)}kg</strong> em aproximadamente 10 meses.</p>
         </div>
         <div style="border: 1px solid #eee; padding: 20px; border-radius: 16px;">
             <h3 style="margin-bottom: 15px;">O que está incluso:</h3>
