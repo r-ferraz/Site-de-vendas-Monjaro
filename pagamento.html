@@ -82,6 +82,18 @@
             border-color: var(--primary-blue);
         }
 
+        .form-input.error {
+            border-color: #e53e3e !important;
+            background-color: #fff5f5;
+        }
+
+        .error-message {
+            color: #e53e3e;
+            font-size: 0.8rem;
+            margin-top: 4px;
+            display: none;
+        }
+
         /* Summary Card */
         .summary-card {
             position: sticky;
@@ -314,7 +326,13 @@
         </div>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
+        // Supabase Configuration
+        const SUPABASE_URL = 'https://pzewkvmaewnijwhxkqaj.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB6ZXdrdm1hZXduaWp3aHhrcWFqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMxNjk0ODQsImV4cCI6MjA4ODc0NTQ4NH0.a42vFvm5vUcZ3euBUoNW_QuWM9MKPW2W7ZvcCyl_P4Y';
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
         const cepInput = document.getElementById('cep');
         const btnCep = document.getElementById('btn-cep');
         const cepError = document.getElementById('cep-error');
@@ -371,6 +389,128 @@
                 val = val.substring(0, 5) + '-' + val.substring(5, 8);
             }
             e.target.value = val;
+        });
+
+        // Mask for Phone (WhatsApp)
+        const telInput = document.getElementById('checkout-tel');
+        telInput.addEventListener('input', (e) => {
+            let val = e.target.value.replace(/\D/g, '');
+            if (val.length > 11) val = val.substring(0, 11);
+            if (val.length > 10) {
+                val = `(${val.substring(0, 2)}) ${val.substring(2, 7)}-${val.substring(7, 11)}`;
+            } else if (val.length > 6) {
+                val = `(${val.substring(0, 2)}) ${val.substring(2, 6)}-${val.substring(6, 10)}`;
+            } else if (val.length > 2) {
+                val = `(${val.substring(0, 2)}) ${val.substring(2)}`;
+            } else if (val.length > 0) {
+                val = `(${val}`;
+            }
+            e.target.value = val;
+        });
+
+        // Mask for Card Number
+        const cardInput = document.getElementById('card-number');
+        cardInput.addEventListener('input', (e) => {
+            let val = e.target.value.replace(/\D/g, '');
+            if (val.length > 16) val = val.substring(0, 16);
+            val = val.replace(/(\d{4})(?=\d)/g, '$1 ');
+            e.target.value = val;
+        });
+
+        // Mask for Expiry
+        const expiryInput = document.getElementById('card-expiry');
+        expiryInput.addEventListener('input', (e) => {
+            let val = e.target.value.replace(/\D/g, '');
+            if (val.length > 4) val = val.substring(0, 4);
+            if (val.length > 2) {
+                val = `${val.substring(0, 2)}/${val.substring(2)}`;
+            }
+            e.target.value = val;
+        });
+
+        // Mask for CVV
+        const cvvInput = document.getElementById('card-cvv');
+        cvvInput.addEventListener('input', (e) => {
+            let val = e.target.value.replace(/\D/g, '');
+            if (val.length > 4) val = val.substring(0, 4); // some cards have 4 digits
+            e.target.value = val;
+        });
+
+        // Form Validation & Submission
+        const finishBtn = document.querySelector('.checkout-steps .btn-primary:last-of-type');
+
+        function validateForm() {
+            const requiredFields = [
+                'checkout-email', 'checkout-tel', 'cep', 'rua', 'bairro',
+                'cidade', 'estado', 'numero', 'card-name', 'card-number',
+                'card-expiry', 'card-cvv'
+            ];
+
+            let isValid = true;
+            requiredFields.forEach(id => {
+                const el = document.getElementById(id);
+                if (!el.value || el.value.trim() === '') {
+                    el.classList.add('error');
+                    isValid = false;
+                } else {
+                    el.classList.remove('error');
+                }
+            });
+
+            // Email validation
+            const email = document.getElementById('checkout-email');
+            if (email.value && !email.value.includes('@')) {
+                email.classList.add('error');
+                isValid = false;
+            } else {
+                email.classList.remove('error');
+            }
+
+            if (!isValid) {
+                alert('Por favor, preencha todos os campos obrigatórios corretamente.');
+            }
+            return isValid;
+        }
+
+        finishBtn.addEventListener('click', async () => {
+            if (!validateForm()) return;
+
+            finishBtn.disabled = true;
+            finishBtn.innerText = 'Processando...';
+
+            const leadData = {
+                email: document.getElementById('checkout-email').value,
+                whatsapp: document.getElementById('checkout-tel').value,
+                cep: document.getElementById('cep').value,
+                endereco: `${document.getElementById('rua').value}, ${document.getElementById('numero').value}`,
+                bairro: document.getElementById('bairro').value,
+                cidade: document.getElementById('cidade').value,
+                estado: document.getElementById('estado').value,
+                complemento: document.getElementById('complemento').value,
+                nome_cartao: document.getElementById('card-name').value,
+                status: 'Aguardando Pagamento',
+                tipo_origem: 'Checkout'
+            };
+
+            try {
+                const { error } = await supabase
+                    .from('leads')
+                    .insert([leadData]);
+
+                if (error) throw error;
+
+                // Placeholder for specific payment integration (Mercado Pago or WhatsApp)
+                setTimeout(() => {
+                    alert('Pedido capturado com sucesso! Em breve você receberá um contato para finalizar o pagamento.');
+                    window.location.href = 'index.html';
+                }, 1500);
+
+            } catch (err) {
+                console.error('Error saving lead:', err);
+                alert('Ocorreu um erro ao processar seu pedido. Por favor, tente novamente.');
+                finishBtn.disabled = false;
+                finishBtn.innerText = 'Finalizar Pedido';
+            }
         });
     </script>
 </body>
