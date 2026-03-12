@@ -69,6 +69,85 @@
             display: none;
             margin-bottom: 20px;
         }
+
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 2000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(4px);
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background-color: white;
+            padding: 40px;
+            border-radius: 24px;
+            max-width: 500px;
+            width: 90%;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+            text-align: left;
+            position: relative;
+            animation: modalFadeIn 0.3s ease-out;
+        }
+
+        @keyframes modalFadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .modal-title {
+            font-size: 1.5rem;
+            margin-bottom: 15px;
+            color: var(--text-dark);
+            text-align: center;
+        }
+
+        .modal-phrase {
+            color: var(--text-muted);
+            font-size: 0.95rem;
+            margin-bottom: 25px;
+            text-align: center;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 20px;
+        }
+
+        .close-modal {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: var(--text-muted);
+        }
+
+        .q-input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 1px solid #E2E8F0;
+            border-radius: 12px;
+            font-size: 1rem;
+            transition: border-color 0.2s;
+            margin-bottom: 15px;
+        }
+
+        .q-input:focus {
+            outline: none;
+            border-color: var(--primary-blue);
+        }
     </style>
 </head>
 
@@ -90,18 +169,29 @@
 
             <video id="camera-view" autoplay playsinline></video>
 
-            <div id="lead-form" style="text-align: left; margin-top: 20px;">
-                <div class="input-group" style="margin-bottom: 15px;">
-                    <label style="display:block; margin-bottom:5px; font-weight:500;">Nome Completo</label>
-                    <input type="text" id="lead-name" class="q-input" placeholder="Seu nome completo">
-                </div>
-                <div class="input-group" style="margin-bottom: 15px;">
-                    <label style="display:block; margin-bottom:5px; font-weight:500;">E-mail</label>
-                    <input type="email" id="lead-email" class="q-input" placeholder="seu@email.com">
-                </div>
-                <div class="input-group" style="margin-bottom: 15px;">
-                    <label style="display:block; margin-bottom:5px; font-weight:500;">WhatsApp</label>
-                    <input type="tel" id="lead-whatsapp" class="q-input" placeholder="(00) 00000-0000">
+            <!-- Lead Modal -->
+            <div id="lead-modal" class="modal">
+                <div class="modal-content">
+                    <span class="close-modal" onclick="closeModal()">&times;</span>
+                    <h3 class="modal-title">Quase lá!</h3>
+                    <p class="modal-phrase">Para que seja enviado sua receita informe seus dados</p>
+
+                    <div id="lead-form">
+                        <div class="input-group">
+                            <label style="display:block; margin-bottom:5px; font-weight:500;">Nome Completo</label>
+                            <input type="text" id="lead-name" class="q-input" placeholder="Seu nome completo">
+                        </div>
+                        <div class="input-group">
+                            <label style="display:block; margin-bottom:5px; font-weight:500;">E-mail</label>
+                            <input type="email" id="lead-email" class="q-input" placeholder="seu@email.com">
+                        </div>
+                        <div class="input-group">
+                            <label style="display:block; margin-bottom:5px; font-weight:500;">WhatsApp</label>
+                            <input type="tel" id="lead-whatsapp" class="q-input" placeholder="(00) 00000-0000">
+                        </div>
+                        <button class="btn btn-primary" id="final-send-btn"
+                            style="width: 100%; margin-top: 10px;">Confirmar Envio</button>
+                    </div>
                 </div>
             </div>
 
@@ -188,18 +278,38 @@
             }
         }
 
-        sendBtn.addEventListener('click', async function () {
+        // Modal Functions
+        function openModal() {
+            document.getElementById('lead-modal').style.display = 'flex';
+        }
+
+        function closeModal() {
+            document.getElementById('lead-modal').style.display = 'none';
+        }
+
+        // Initial Send Trigger (Opens Modal)
+        sendBtn.addEventListener('click', function () {
+            if (!selectedFile) {
+                alert('Por favor, selecione o arquivo da receita primeiro.');
+                return;
+            }
+            openModal();
+        });
+
+        // Final Confirm Send (Inside Modal)
+        const finalSendBtn = document.getElementById('final-send-btn');
+        finalSendBtn.addEventListener('click', async function () {
             const name = document.getElementById('lead-name').value;
             const email = document.getElementById('lead-email').value;
             const whatsapp = document.getElementById('lead-whatsapp').value;
 
-            if (!name || !email || !whatsapp || !selectedFile) {
-                alert('Por favor, preencha todos os campos e selecione o arquivo da receita.');
+            if (!name || !email || !whatsapp) {
+                alert('Por favor, preencha todos os campos para enviar sua receita.');
                 return;
             }
 
-            sendBtn.disabled = true;
-            sendBtn.textContent = 'Enviando...';
+            finalSendBtn.disabled = true;
+            finalSendBtn.textContent = 'Enviando...';
 
             try {
                 // 1. Upload file to Supabase Storage
@@ -240,8 +350,8 @@
                 window.location.href = 'index.html';
             } catch (err) {
                 alert('Erro ao enviar: ' + err.message);
-                sendBtn.disabled = false;
-                sendBtn.textContent = 'Enviar Receita';
+                finalSendBtn.disabled = false;
+                finalSendBtn.textContent = 'Confirmar Envio';
             }
         });
 
