@@ -370,10 +370,10 @@
                 </div>
 
                 <!-- Old generic previews (hidden to give emphasis to Transcript) -->
-                <img id="image-preview" class="preview-image" style="display: none;">
-                <div id="pdf-preview-container" style="display: none; margin-top: 15px;">
+                <img id="image-preview" class="preview-image" style="display: none; margin-bottom: 20px;">
+                <div id="pdf-preview-container" style="display: none; margin-top: 15px; margin-bottom: 20px;">
                     <iframe id="pdf-frame"
-                        style="width: 100%; height: 0px; opacity: 0; border: none; border-radius: 12px; pointer-events: none;"></iframe>
+                        style="width: 100%; height: 400px; border: none; border-radius: 12px;"></iframe>
                 </div>
 
                 <button class="btn"
@@ -443,6 +443,9 @@
 
             try {
                 // Configuração Visual Inicial
+                const nameLabel = document.getElementById('file-name-label');
+                if (nameLabel) nameLabel.textContent = file.name;
+
                 dropZone.style.display = 'none';
                 previewBox.style.display = 'block';
                 sendBtn.disabled = true;
@@ -450,12 +453,30 @@
 
                 document.getElementById('processing-box').style.display = 'block';
                 document.getElementById('transcription-result').style.display = 'none';
-                imagePreview.style.display = 'none';
-                pdfPreviewContainer.style.display = 'none';
 
-                // Limpeza silenciosa do frame (opcional)
+                // Tratar preview baseado no tipo usando iframe ou img tags restaurados
                 if (file.type === 'application/pdf') {
+                    imagePreview.style.display = 'none';
+                    pdfPreviewContainer.style.display = 'block';
                     pdfFrame.src = URL.createObjectURL(file);
+                    document.getElementById('file-icon').textContent = '📕';
+                } else if (file.type.startsWith('image/')) {
+                    pdfPreviewContainer.style.display = 'none';
+                    imagePreview.style.display = 'block';
+                    document.getElementById('file-icon').textContent = '🖼️';
+                    const reader = new FileReader();
+                    reader.onload = function (e) {
+                        imagePreview.src = e.target.result;
+                    }
+                    reader.onerror = function () {
+                        console.error('Error reading image file');
+                        showStatus('Erro ao ler a imagem. Tente outro arquivo.', 'error');
+                    }
+                    reader.readAsDataURL(file);
+                } else {
+                    // Outros tipos, esconde previes visuais
+                    imagePreview.style.display = 'none';
+                    pdfPreviewContainer.style.display = 'none';
                 }
 
                 // Simula o tempo da "transcrição" igual ao site modelo
