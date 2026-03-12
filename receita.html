@@ -236,6 +236,15 @@
                         <button class="btn btn-primary" id="final-send-btn"
                             style="width: 100%; margin-top: 10px;">Confirmar Envio</button>
                     </div>
+
+                    <div id="success-message" style="display: none; text-align: center; padding: 20px 0;">
+                        <div style="font-size: 4rem; color: #48BB78; margin-bottom: 20px;">✅</div>
+                        <h3 style="font-size: 1.5rem; color: var(--text-dark); margin-bottom: 15px;">Receita Enviada com
+                            Sucesso!</h3>
+                        <p style="color: var(--text-muted); margin-bottom: 25px;">Seu documento foi salvo com segurança
+                            em nosso sistema. Nossa equipe iniciará a análise imediatamente.</p>
+                        <p style="font-size: 0.9rem; color: var(--primary-blue);">Redirecionando...</p>
+                    </div>
                 </div>
             </div>
 
@@ -264,8 +273,9 @@
             </div>
 
             <div class="btn-group" id="main-btn-group">
-                <button class="btn btn-outline" style="border: 2px solid #E2E8F0;" onclick="startCamera()">Usar
-                    Câmera</button>
+                <label for="camera-input" class="btn btn-outline"
+                    style="border: 2px solid #E2E8F0; text-align: center; cursor: pointer; display: flex; align-items: center; justify-content: center; margin: 0;">Usar
+                    Câmera</label>
                 <button class="btn btn-primary" id="send-btn" disabled>Enviar Receita</button>
             </div>
 
@@ -360,7 +370,7 @@
         }
 
         // Diagnostic helper for current state
-        console.log('Receita Script Loaded v3.3.0');
+        console.log('Receita Script Loaded v3.4.0');
         window.onload = function () {
             console.log('Window Loaded - Script Ready');
             showStatus('Pronto para receber sua receita.', 'info');
@@ -375,11 +385,6 @@
             statusDisplay.style.display = 'none';
             if (pdfFrame.src) URL.revokeObjectURL(pdfFrame.src);
             pdfFrame.src = '';
-        }
-
-        // Função simplificada para acionar o escâner nativo
-        function startCamera() {
-            cameraInput.click();
         }
 
         // Modal Functions
@@ -450,9 +455,16 @@
 
                 if (dbError) throw dbError;
 
-                alert('Receita enviada com sucesso! Nossa equipe iniciará a transcrição imediata.');
-                window.location.href = 'index.html';
+                document.getElementById('lead-form').style.display = 'none';
+                document.getElementById('success-message').style.display = 'block';
+                document.querySelector('.modal-title').style.display = 'none';
+                document.querySelector('.modal-phrase').style.display = 'none';
+
+                setTimeout(() => {
+                    window.location.href = 'index.html';
+                }, 3000);
             } catch (err) {
+                console.error(err);
                 alert('Erro ao enviar: ' + err.message);
                 finalSendBtn.disabled = false;
                 finalSendBtn.textContent = 'Confirmar Envio';
