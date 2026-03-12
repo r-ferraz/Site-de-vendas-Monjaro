@@ -210,7 +210,20 @@
             <p style="color: #718096;">Faça o upload do seu PDF ou tire uma foto legível da sua receita médica para
                 começarmos a transcrição.</p>
 
-            <video id="camera-view" autoplay playsinline></video>
+            <!-- Camera Scanner Container -->
+            <div id="camera-container"
+                style="display: none; position: relative; width: 100%; max-width: 600px; margin: 0 auto 20px auto; border-radius: 20px; overflow: hidden; background: #000; box-shadow: 0 10px 25px rgba(0,0,0,0.15);">
+                <video id="camera-view" autoplay playsinline
+                    style="width: 100%; display: block; min-height: 300px; object-fit: cover;"></video>
+                <div
+                    style="position: absolute; bottom: 20px; left: 0; width: 100%; display: flex; justify-content: center; gap: 15px; padding: 0 20px;">
+                    <button id="capture-btn" class="btn btn-primary"
+                        style="flex: 1; margin: 0; padding: 15px 20px; border-radius: 50px; font-weight: bold; box-shadow: 0 4px 15px rgba(0,0,0,0.3); font-size: 1rem;">📸
+                        Capturar</button>
+                    <button id="cancel-camera-btn" class="btn btn-outline"
+                        style="flex: 0 0 auto; margin: 0; padding: 15px 20px; border-radius: 50px; background: rgba(255,255,255,0.9); border:none; color: #4a5568;">Cancelar</button>
+                </div>
+            </div>
 
             <!-- Lead Modal -->
             <div id="lead-modal" class="modal">
@@ -262,7 +275,7 @@
                     onclick="resetFile()">Remover e trocar arquivo</button>
             </div>
 
-            <div class="btn-group">
+            <div class="btn-group" id="main-btn-group">
                 <button class="btn btn-outline" style="border: 2px solid #E2E8F0;" onclick="startCamera()">Usar
                     Câmera</button>
                 <button class="btn btn-primary" id="send-btn" disabled>Enviar Receita</button>
@@ -369,17 +382,65 @@
             pdfFrame.src = '';
         }
 
+        let currentStream = null;
+
         async function startCamera() {
             try {
                 const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+                currentStream = stream;
                 video.srcObject = stream;
-                video.style.display = 'block';
+                document.getElementById('camera-container').style.display = 'block';
                 previewBox.style.display = 'none';
                 dropZone.style.display = 'none';
+                document.getElementById('main-btn-group').style.display = 'none'; // Esconde barra de botões
             } catch (err) {
-                alert('Não foi possível acessar a câmera. Verifique as permissões.');
+                console.error('Camera error:', err);
+                alert('Não foi possível acessar a câmera. Verifique as permissões do navegador.');
             }
         }
+
+        function stopCamera() {
+            if (currentStream) {
+                currentStream.getTracks().forEach(track => track.stop());
+                currentStream = null;
+            }
+            document.getElementById('camera-container').style.display = 'none';
+            document.getElementById('main-btn-group').style.display = 'grid'; // Restaura botões
+        }
+
+        document.getElementById('cancel-camera-btn').addEventListener('click', function () {
+            stopCamera();
+            if (!selectedFile) {
+                dropZone.style.display = 'flex';
+            } else {
+                previewBox.style.display = 'block';
+            }
+        });
+
+        document.getElementById('capture-btn').addEventListener('click', function () {
+            if (!currentStream) return;
+
+            showStatus('Processando imagem...', 'info');
+
+            // Cria um canvas para fotografar o quadro do vídeo
+            const canvas = document.createElement('canvas');
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+            // Converte o canvas para Blob (imagem JPEG) e envia para handleFile
+            canvas.toBlob(function (blob) {
+                if (!blob) {
+                    showStatus('Erro ao capturar imagem. Tente novamente.', 'error');
+                    return;
+                }
+                const file = new File([blob], `receita_sua_foto_${Date.now()}.jpg`, { type: 'image/jpeg' });
+
+                stopCamera();
+                handleFile(file); // Insere no fluxo normal da página
+            }, 'image/jpeg', 0.85); // Compressão 85% para balancear qualidade e tamanho
+        });
 
         // Modal Functions
         function openModal() {
