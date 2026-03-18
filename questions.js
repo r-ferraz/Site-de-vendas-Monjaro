@@ -96,7 +96,6 @@ window.akinQuestions = [
         options: ['Sim', 'Não']
     },
     {
-        id: 'peso_alvo',
         type: 'input',
         question: 'Qual sua meta de peso (kg)?',
         inputType: 'number',

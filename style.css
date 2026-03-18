@@ -113,6 +113,19 @@ img {
     box-shadow: 0 10px 20px rgba(164, 71, 22, 0.2);
 }
 
+.btn-outline {
+    background-color: transparent;
+    border: 2px solid var(--primary-blue);
+    color: var(--primary-blue);
+}
+
+.btn-outline:hover {
+    background-color: var(--primary-blue);
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 10px 20px rgba(164, 71, 22, 0.1);
+}
+
 /* Header */
 header {
     height: 80px;

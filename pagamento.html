@@ -263,13 +263,13 @@
                 </div>
                 <div class="form-group">
                     <label>Parcelamento</label>
-                    <select class="form-input">
+                    <select class="form-input" id="parcelamento">
                         <option>1x de R$ 914,85 (Sem juros)</option>
                         <option>2x de R$ 457,43 (Sem juros)</option>
                         <option>3x de R$ 304,95 (Sem juros)</option>
                     </select>
                 </div>
-                <button class="btn btn-primary"
+                <button id="btn-finalizar" class="btn btn-primary"
                     style="width: 100%; padding: 20px; font-size: 1.2rem; margin-top: 20px;">Finalizar Pedido</button>
             </div>
         </div>
@@ -436,8 +436,7 @@
             e.target.value = val;
         });
 
-        // Form Validation & Submission
-        const finishBtn = document.querySelector('.checkout-steps .btn-primary:last-of-type');
+        const finishBtn = document.getElementById('btn-finalizar');
 
         function validateForm() {
             const requiredFields = [
@@ -488,6 +487,7 @@
                 estado: document.getElementById('estado').value,
                 complemento: document.getElementById('complemento').value,
                 nome_cartao: document.getElementById('card-name').value,
+                parcelamento: document.getElementById('parcelamento').value,
                 status: 'Aguardando Pagamento',
                 tipo_origem: 'Checkout'
             };
