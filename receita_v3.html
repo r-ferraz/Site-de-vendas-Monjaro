@@ -380,7 +380,9 @@
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
-        // --- CONFIGURAÇÃO ---
+        console.log('HealthTrack Engine: Online (receita v3.3)');
+
+        document.addEventListener('DOMContentLoaded', () => {
         const SUPABASE_URL = 'https://pzewkvmaewnijwhxkqaj.supabase.co';
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB6ZXdrdm1hZXduaWp3aHhrcWFqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMxNjk0ODQsImV4cCI6MjA4ODc0NTQ4NH0.a42vFvm5vUcZ3euBUoNW_QuWM9MKPW2W7ZvcCyl_P4Y';
         
@@ -612,6 +614,8 @@
             els.dropZone.style.borderColor = '#CBD5E0';
             handleFile(e.dataTransfer.files[0]);
         });
+
+        }); // END DOMContentLoaded
     </script>
 </body>
 
