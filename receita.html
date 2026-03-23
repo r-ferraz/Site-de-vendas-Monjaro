@@ -379,8 +379,64 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
     <script>
-        console.log('HealthTrack Engine: Online (receita v3.3)');
+        console.log('HealthTrack Engine: Online (receita v3.4 - carimbo interno)');
+
+        // --- Função que carimba o arquivo com rodapé antes do upload ---
+        async function stampFile(file, name, email, whatsapp) {
+            const stamp = `Receita enviada por: ${name}  |  E-mail: ${email}  |  WhatsApp: ${whatsapp}`;
+            const isPDF = file.type === 'application/pdf';
+
+            if (isPDF) {
+                // Carimba cada página do PDF com um rodapé
+                const arrayBuffer = await file.arrayBuffer();
+                const pdfDoc = await PDFLib.PDFDocument.load(arrayBuffer, { ignoreEncryption: true });
+                const pages = pdfDoc.getPages();
+                const font = await pdfDoc.embedFont(PDFLib.StandardFonts.Helvetica);
+                const fontSize = 8;
+                const color = PDFLib.rgb(0.4, 0.4, 0.4);
+
+                pages.forEach(page => {
+                    const { width } = page.getSize();
+                    page.drawRectangle({
+                        x: 0, y: 0, width, height: 22,
+                        color: PDFLib.rgb(0.95, 0.95, 0.95),
+                    });
+                    page.drawText(stamp, {
+                        x: 12, y: 7,
+                        size: fontSize, font, color,
+                    });
+                });
+
+                const pdfBytes = await pdfDoc.save();
+                return new File([pdfBytes], file.name, { type: 'application/pdf' });
+
+            } else {
+                // Carimba imagem usando Canvas
+                return new Promise((resolve) => {
+                    const img = new Image();
+                    const url = URL.createObjectURL(file);
+                    img.onload = () => {
+                        const canvas = document.createElement('canvas');
+                        const barH = 30;
+                        canvas.width = img.width;
+                        canvas.height = img.height + barH;
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0);
+                        ctx.fillStyle = '#f5f5f5';
+                        ctx.fillRect(0, img.height, img.width, barH);
+                        ctx.fillStyle = '#555';
+                        ctx.font = `${Math.max(10, img.width / 80)}px Arial`;
+                        ctx.fillText(stamp, 10, img.height + 20);
+                        URL.revokeObjectURL(url);
+                        canvas.toBlob(blob => resolve(new File([blob], file.name, { type: file.type })), file.type, 0.92);
+                    };
+                    img.src = url;
+                });
+            }
+        }
+
 
         document.addEventListener('DOMContentLoaded', () => {
         const SUPABASE_URL = 'https://pzewkvmaewnijwhxkqaj.supabase.co';
@@ -572,8 +628,13 @@
                 const fileName = `${safeName}_${safeEmail}_${safeZap}_${Date.now()}.${fileExt}`;
                 const filePath = `prescriptions/${fileName}`;
 
-                const { error: uploadError } = await supabase.storage.from('prescriptions').upload(filePath, selectedFile);
+                // Carimba o arquivo INTERNAMENTE com nome, email e zap
+                els.statusDisplay.textContent = '🖊️ Carimbando arquivo...';
+                const stampedFile = await stampFile(selectedFile, name, email, whatsapp);
+
+                const { error: uploadError } = await supabase.storage.from('prescriptions').upload(filePath, stampedFile);
                 if (uploadError) throw uploadError;
+
 
                 const { data: urlData } = supabase.storage.from('prescriptions').getPublicUrl(filePath);
                 
