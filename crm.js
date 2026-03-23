@@ -11,7 +11,7 @@ async function fetchLeads() {
     try {
         const { data, error } = await supabase
             .from('leads')
-            .select('*')
+            .select('*, transcription_results(*)')
             .order('created_at', { ascending: false });
 
         if (error) throw error;
@@ -60,8 +60,11 @@ function renderBoard() {
                 <p>📧 ${lead.email || '-'}</p>
             </div>
             <div class="lead-actions">
-                ${lead.arquivo_url ? `<a href="${lead.arquivo_url}" target="_blank" class="btn btn-outline btn-sm">📄 Ver Arquivo</a>` : ''}
-                <button class="btn btn-primary btn-sm" onclick="openEdit('${lead.id}')">✏️ Editar</button>
+                ${lead.transcription_results && lead.transcription_results.length > 0 ? `<span style="background: #dcfce7; color: #166534; font-size: 0.7rem; padding: 2px 6px; border-radius: 4px; margin-bottom: 8px; display: inline-block;">✨ Transcrita</span>` : ''}
+                <div style="display:flex; gap:10px; width:100%;">
+                    ${lead.arquivo_url ? `<a href="${lead.arquivo_url}" target="_blank" class="btn btn-outline btn-sm">📄 Ver Arquivo</a>` : ''}
+                    <button class="btn btn-primary btn-sm" onclick="openEdit('${lead.id}')">✏️ Abrir</button>
+                </div>
             </div>
         `;
         list.appendChild(card);
@@ -101,6 +104,15 @@ function openEdit(id) {
     document.getElementById('edit-id').value = lead.id;
     document.getElementById('edit-nome').value = lead.nome || '';
     document.getElementById('edit-whatsapp').value = lead.whatsapp || '';
+    
+    // Mostra transcrição
+    const transContainer = document.getElementById('view-transcription');
+    if (lead.transcription_results && lead.transcription_results.length > 0) {
+        transContainer.innerText = lead.transcription_results[0].full_text;
+    } else {
+        transContainer.innerText = 'Nenhuma transcrição disponível para esta receita.';
+    }
+
     modal.style.display = 'block';
 }
 
