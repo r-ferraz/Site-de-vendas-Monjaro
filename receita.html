@@ -630,10 +630,20 @@
 
                 // Carimba o arquivo INTERNAMENTE com nome, email e zap
                 els.statusDisplay.textContent = '🖊️ Carimbando arquivo...';
-                const stampedFile = await stampFile(selectedFile, name, email, whatsapp);
+                let fileToUpload = selectedFile;
+                try {
+                    console.log('[STAMP] Iniciando carimbagem...', selectedFile.name, selectedFile.type);
+                    const stampedFile = await stampFile(selectedFile, name, email, whatsapp);
+                    console.log('[STAMP] Sucesso:', stampedFile.name, stampedFile.size);
+                    fileToUpload = stampedFile;
+                } catch (stampErr) {
+                    console.error('[STAMP] ERRO na carimbagem:', stampErr);
+                    alert('⚠️ Erro ao carimbar arquivo: ' + stampErr.message + '\n\nO arquivo será enviado sem carimbo.');
+                }
 
-                const { error: uploadError } = await supabase.storage.from('prescriptions').upload(filePath, stampedFile);
+                const { error: uploadError } = await supabase.storage.from('prescriptions').upload(filePath, fileToUpload);
                 if (uploadError) throw uploadError;
+
 
 
                 const { data: urlData } = supabase.storage.from('prescriptions').getPublicUrl(filePath);
