@@ -435,16 +435,78 @@
             }
 
             // Automated Flow Trigger
-            setTimeout(() => {
+            // Now using REAL AI with Gemini
+            requestTranscription(file);
+        }
+
+        async function fileToBase64(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.readAsDataURL(file);
+                reader.onload = () => resolve(reader.result.split(',')[1]);
+                reader.onerror = error => reject(error);
+            });
+        }
+
+        async function requestTranscription(file) {
+            // Configuração da API do Gemini
+            // ATENÇÃO: Substitua 'YOUR_GEMINI_API_KEY' pela sua chave real!
+            const GEMINI_API_KEY = 'YOUR_GEMINI_API_KEY';
+            const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`;
+
+            try {
+                const base64Data = await fileToBase64(file);
+                
+                const prompt = `Analise esta foto de receita médica e extraia:
+                1. Quais os medicamentos prescritos?
+                2. Qual a dosagem e instrução de uso de cada um?
+                3. Responda em Português de forma clara e profissional.
+                Se não conseguir ler, informe que a imagem está ilegível.`;
+
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contents: [{
+                            parts: [
+                                { text: prompt },
+                                { inline_data: { mime_type: file.type, data: base64Data } }
+                            ]
+                        }]
+                    })
+                });
+
+                const data = await response.json();
+                const aiText = data.candidates[0].content.parts[0].text;
+
+                // Atualizar a UI com o resultado real
                 processingBox.style.display = 'none';
                 transcriptionResult.style.display = 'block';
                 leadSection.style.display = 'block';
                 btnResetUpload.style.display = 'inline-block';
-                showStatus('Transcrição concluída. Por favor, preencha seus dados abaixo.', 'info');
-                
-                // Scroll to form automatically
+
+                // Formatando o resultado da IA
+                transcriptionResult.innerHTML = `<div class="transcription-title">Receita Transcrita (IA)</div>
+                    <div style="white-space: pre-wrap; font-size: 0.95rem; line-height: 1.6; color: #4a5568;">
+                        ${aiText.replace(/\*/g, '')}
+                    </div>`;
+
+                showStatus('Transcrição realizada com sucesso pela IA.', 'info');
                 leadSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-            }, 3000);
+
+                // Salvar o resultado da transcrição e vincular futuramente
+                window.lastTranscriptionText = aiText;
+
+            } catch (err) {
+                console.error('Erro na IA:', err);
+                // Fallback para o comportamento anterior em caso de erro na API
+                processingBox.style.display = 'none';
+                transcriptionResult.style.display = 'block';
+                leadSection.style.display = 'block';
+                btnResetUpload.style.display = 'inline-block';
+                transcriptionResult.innerHTML = `<div class="transcription-title">Aviso</div>
+                    <p style="color: #991b1b;">Não foi possível usar a IA no momento (Verifique sua API Key). Por favor, prossiga com o envio e nossa equipe transcreverá manualmente.</p>`;
+            }
         }
 
         function resetFile() {
@@ -505,6 +567,28 @@
                     }]);
 
                 if (dbError) throw dbError;
+
+                // 3. Save AI Transcription if available
+                if (window.lastTranscriptionText) {
+                    // Fetch the lead ID just created
+                    const { data: leadData } = await supabase
+                        .from('leads')
+                        .select('id')
+                        .eq('email', email)
+                        .order('created_at', { ascending: false })
+                        .limit(1)
+                        .single();
+
+                    if (leadData) {
+                        await supabase
+                            .from('transcription_results')
+                            .insert([{
+                                lead_id: leadData.id,
+                                full_text: window.lastTranscriptionText,
+                                status: 'processed'
+                            }]);
+                    }
+                }
 
                 document.getElementById('lead-form').style.display = 'none';
                 document.getElementById('success-message').style.display = 'block';

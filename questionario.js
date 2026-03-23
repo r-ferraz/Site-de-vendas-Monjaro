@@ -102,11 +102,26 @@ function nextStep() {
     // Collect input data
     const q = questions[currentStep];
     if (q.type === 'input') {
-        userData[q.id] = document.getElementById(q.id).value;
+        const inputVal = document.getElementById(q.id).value;
+        if (!inputVal) {
+            alert('Por favor, preencha este campo.');
+            return;
+        }
+        userData[q.id] = inputVal;
     } else if (q.type === 'input_group') {
+        let allFilled = true;
         q.inputs.forEach(input => {
-            userData[input.id] = document.getElementById(input.id).value;
+            const val = document.getElementById(input.id).value;
+            if (!val) {
+                allFilled = false;
+            }
+            userData[input.id] = val;
         });
+
+        if (!allFilled) {
+            alert('Por favor, preencha todos os campos.');
+            return;
+        }
 
         // If this is the contact step, save the lead immediately
         if (q.id === 'contato') {

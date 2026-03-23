@@ -1,7 +1,7 @@
 # Akin Project Context
 
 ## Overview
-This folder contains the rebranded Akin website, cloned from VoySaude.
+This folder contains the rebranded Akin website.
 
 ## Branding
 - **Name**: Akin (Never use "Voy")
