@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Maori | Enviar Receita (v3.1)</title>
+    <!-- Version: 3.2.0 - Force update cache -->
+    <link rel="stylesheet" href="style.css">
+    <style>
+        body {
+            background-color: var(--bg-offwhite);
+        }
+
+        .upload-container {
+            max-width: 600px;
+            margin: 60px auto;
+            padding: 40px;
+            background: white;
+            border-radius: 32px;
+            box-shadow: 0 20px 60px rgba(0, 71, 171, 0.08);
+            text-align: center;
+        }
+
+        .upload-box {
+            border: 2px dashed #48BB78;
+            background: #F0FFF4;
+            border-radius: 16px;
+            padding: 50px 20px;
+            margin: 30px 0;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+        }
+
+        .upload-box:hover {
+            border-color: #38A169;
+            background: #E6FFFA;
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(72, 187, 120, 0.1);
+        }
+
+        .upload-icon {
+            font-size: 3.5rem;
+            color: #48BB78;
+            margin-bottom: -5px;
+            background: white;
+            width: 80px;
+            height: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 20px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+        }
+
+        .btn-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-top: 30px;
+        }
+
+        /* Improved Preview Styling */
+        .preview-container {
+            display: none;
+            margin-top: 20px;
+            width: 100%;
+            background: #f8fafc;
+            padding: 24px;
+            border-radius: 20px;
+            border: 2px solid var(--primary-blue);
+            text-align: center;
+        }
+
+        .file-info {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 15px;
+            background: white;
+            padding: 10px 20px;
+            border-radius: 50px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            font-weight: 600;
+            color: var(--text-dark);
+            word-break: break-all;
+        }
+
+        .preview-image {
+            max-width: 100%;
+            max-height: 300px;
+            border-radius: 12px;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        #camera-view {
+            width: 100%;
+            border-radius: 20px;
+            display: none;
+            margin-bottom: 20px;
+        }
+
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 2000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(4px);
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background-color: white;
+            padding: 40px;
+            border-radius: 24px;
+            max-width: 500px;
+            width: 90%;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+            text-align: left;
+            position: relative;
+            animation: modalFadeIn 0.3s ease-out;
+        }
+
+        @keyframes modalFadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .modal-title {
+            font-size: 1.5rem;
+            margin-bottom: 15px;
+            color: var(--text-dark);
+            text-align: center;
+        }
+
+        .modal-phrase {
+            color: var(--text-muted);
+            font-size: 0.95rem;
+            margin-bottom: 25px;
+            text-align: center;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 20px;
+        }
+
+        .close-modal {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: var(--text-muted);
+        }
+
+        .q-input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 1px solid #E2E8F0;
+            border-radius: 12px;
+            font-size: 1rem;
+            transition: border-color 0.2s;
+            margin-bottom: 15px;
+        }
+
+        .q-input:focus {
+            outline: none;
+            border-color: var(--primary-blue);
+        }
+
+        .status-msg {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            display: none;
+        }
+
+        .status-msg.error {
+            background: #fee2e2;
+            color: #991b1b;
+            display: block;
+        }
+
+        .status-msg.info {
+            background: #e0f2fe;
+            color: #075985;
+            display: block;
+        }
+
+        /* Transcription Styles */
+        .transcription-box {
+            background: #f8fafc;
+            border: 2px solid #E2E8F0;
+            border-radius: 16px;
+            padding: 24px;
+            margin-top: 20px;
+            text-align: left;
+            display: none;
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        .transcription-title {
+            color: var(--primary-blue);
+            font-size: 1.25rem;
+            font-weight: 700;
+            margin-bottom: 20px;
+        }
+
+        .med-item {
+            border-left: 3px solid var(--primary-blue);
+            padding-left: 15px;
+            margin-bottom: 15px;
+        }
+
+        .med-name {
+            font-weight: 700;
+            color: var(--text-dark);
+            margin-bottom: 5px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .med-desc {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+
+        .processing-box {
+            display: none;
+            margin-top: 20px;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .spinner {
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            border-left-color: var(--primary-blue);
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px auto;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <header
+        style="height: 80px; background: white; border-bottom: 1px solid #edf2f7; display: flex; align-items: center; justify-content: center;">
+        <div class="container" style="display: flex; justify-content: center;">
+            <a href="index.html" class="logo">
+                <img src="assets/Asset 10.svg" alt="Maori Saúde" style="height: 40px; width: auto;">
+            </a>
+        </div>
+    </header>
+
+    <div class="container">
+        <div class="upload-container">
+            <h1 style="font-size: 2rem; margin-bottom: 10px;">Enviar sua Receita</h1>
+            <p style="color: #718096;">Faça o upload do seu PDF ou tire uma foto legível da sua receita médica para
+                começarmos a transcrição.</p>
+
+            <!-- Removed Main Action Buttons as requested -->
+
+            <div class="upload-box" id="drop-zone" onclick="document.getElementById('file-input').click()">
+                <div class="upload-icon">📄</div>
+                <div style="font-weight: 700; color: var(--text-dark); font-size: 1.1rem;">Clique para escolher um
+                    arquivo ou tire uma foto</div>
+                <div style="font-size: 0.9rem; color: #718096; max-width: 80%; line-height: 1.4;">Você pode enviar uma
+                    foto legível ou um documento PDF da sua receita médica. (Máx 10MB)</div>
+                <input type="file" id="file-input" style="display: none;" accept="image/*,application/pdf">
+            </div>
+
+            <div id="status-display" class="status-msg"></div>
+
+            <!-- Integrated Content Flow (Transcription -> Form -> Success) -->
+            <div class="preview-container" id="preview-box">
+                <div class="file-info">
+                    <span id="file-icon">✅</span>
+                    <span id="file-name-label">Documento Recebido</span>
+                </div>
+
+                <!-- Loading State Area -->
+                <div id="processing-box" class="processing-box">
+                    <div class="spinner"></div>
+                    <div style="font-weight: 600; color: var(--text-dark);">Processando e transcrevendo sua receita...
+                    </div>
+                    <div style="font-size: 0.85rem; color: #718096; margin-top: 5px;">Aguarde um momento.</div>
+                </div>
+
+                <!-- Fake Transcript Result Area -->
+                <div id="transcription-result" class="transcription-box">
+                    <div class="transcription-title">Receita Transcrita</div>
+                    <div class="med-item">
+                        <div class="med-name">💊 Amoxicilina 500mg</div>
+                        <div class="med-desc">Tomar 1 cápsula a cada 8 horas, durante 7 dias.</div>
+                    </div>
+                </div>
+
+                <!-- Integrated Lead Form (Appears after Transcription) -->
+                <div id="lead-section" style="display: none; margin-top: 30px; text-align: left; border-top: 1px solid #edf2f7; padding-top: 30px;">
+                    <h3 style="font-size: 1.25rem; margin-bottom: 20px; color: var(--text-dark); text-align: center;">Quase lá! Informe seus dados para finalizar</h3>
+                    
+                    <div id="lead-form">
+                        <div class="input-group">
+                            <label style="display:block; margin-bottom:5px; font-weight:500;">Nome Completo</label>
+                            <input type="text" id="lead-name" class="q-input" placeholder="Seu nome completo">
+                        </div>
+                        <div class="input-group">
+                            <label style="display:block; margin-bottom:5px; font-weight:500;">E-mail</label>
+                            <input type="email" id="lead-email" class="q-input" placeholder="seu@email.com">
+                        </div>
+                        <div class="input-group">
+                            <label style="display:block; margin-bottom:5px; font-weight:500;">WhatsApp</label>
+                            <input type="tel" id="lead-whatsapp" class="q-input" placeholder="(00) 00000-0000">
+                        </div>
+                        <button class="btn btn-primary" id="final-send-btn"
+                            style="width: 100%; margin-top: 10px;">Enviar para o médico</button>
+                    </div>
+
+                    <div id="success-message" style="display: none; text-align: center; padding: 20px 0;">
+                        <div style="font-size: 4rem; color: #48BB78; margin-bottom: 20px;">✅</div>
+                        <h3 style="font-size: 1.5rem; color: var(--text-dark); margin-bottom: 15px;">Receita Enviada com Sucesso!</h3>
+                        <p style="color: var(--text-muted); margin-bottom: 25px;">Seu documento foi salvo com segurança em nosso sistema (Bucket: prescriptions). A transcrição realizada pela IA também foi arquivada para análise do médico.</p>
+                        <p style="font-size: 0.9rem; color: var(--primary-blue);">Redirecionando...</p>
+                    </div>
+                </div>
+
+                <!-- Hidden Previews -->
+                <img id="image-preview" class="preview-image" style="display: none; margin-bottom: 20px;">
+                <div id="pdf-preview-container" style="display: none; margin-top: 15px; margin-bottom: 20px;">
+                    <iframe id="pdf-frame"
+                        style="width: 100%; height: 400px; border: none; border-radius: 12px;"></iframe>
+                </div>
+
+                <button class="btn" id="btn-reset-upload"
+                    style="background: none; border: 1px solid #E2E8F0; border-radius: 50px; color: #4a5568; font-size: 0.9rem; margin-top: 25px; padding: 10px 20px;"
+                    onclick="resetFile()">Remover e Enviar Outro</button>
+            </div>
+
+            <div
+                style="margin-top: 30px; display: flex; align-items: center; justify-content: center; gap: 8px; color: #48BB78; font-size: 0.9rem;">
+                🔒 Seus dados estão seguros e criptografados
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        // --- CONFIGURAÇÃO ---
+        const SUPABASE_URL = 'https://pzewkvmaewnijwhxkqaj.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB6ZXdrdm1hZXduaWp3aHhrcWFqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMxNjk0ODQsImV4cCI6MjA4ODc0NTQ4NH0.a42vFvm5vUcZ3euBUoNW_QuWM9MKPW2W7ZvcCyl_P4Y';
+        
+        // Elementos Globais
+        const els = {
+            fileInput: document.getElementById('file-input'),
+            dropZone: document.getElementById('drop-zone'),
+            previewBox: document.getElementById('preview-box'),
+            imagePreview: document.getElementById('image-preview'),
+            statusDisplay: document.getElementById('status-display'),
+            pdfFrame: document.getElementById('pdf-frame'),
+            pdfPreviewContainer: document.getElementById('pdf-preview-container'),
+            leadSection: document.getElementById('lead-section'),
+            transcriptionResult: document.getElementById('transcription-result'),
+            processingBox: document.getElementById('processing-box'),
+            btnResetUpload: document.getElementById('btn-reset-upload'),
+            fileNameLabel: document.getElementById('file-name-label')
+        };
+
+        let supabase = null;
+        let selectedFile = null;
+
+        // --- INICIALIZAÇÃO ---
+        window.addEventListener('load', () => {
+            console.log('Site carregado v3.2.0');
+            try {
+                if (!window.supabase) throw new Error('Biblioteca Supabase não encontrada.');
+                supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+                console.log('Supabase pronto.');
+            } catch (e) {
+                console.error('Erro no Supabase:', e);
+            }
+        });
+
+        // Captura de erro global para ajudar o usuário
+        window.onerror = function(msg, url, line) {
+            alert('Aviso do Site: ' + msg + '\nLinha: ' + line);
+            return false;
+        };
+
+        function showStatus(msg, type = 'info') {
+            if (!els.statusDisplay) return;
+            els.statusDisplay.innerText = msg;
+            els.statusDisplay.className = 'status-msg ' + type;
+            els.statusDisplay.style.display = 'block';
+        }
+
+        els.fileInput.addEventListener('change', function (e) {
+            console.log('Arquivo selecionado');
+            if (e.target.files && e.target.files[0]) {
+                handleFile(e.target.files[0]);
+            }
+        });
+
+        function handleFile(file) {
+            console.log('Processando:', file.name);
+            if (!file) return;
+            selectedFile = file;
+
+            // Interface Reset
+            els.dropZone.style.display = 'none';
+            els.previewBox.style.display = 'block';
+            els.leadSection.style.display = 'none';
+            els.transcriptionResult.style.display = 'none';
+            els.processingBox.style.display = 'block';
+            els.btnResetUpload.style.display = 'none';
+            els.fileNameLabel.textContent = file.name;
+
+            // Tipo de arquivo
+            if (file.type === 'application/pdf') {
+                els.imagePreview.style.display = 'none';
+                els.pdfPreviewContainer.style.display = 'block';
+                els.pdfFrame.src = URL.createObjectURL(file);
+                document.getElementById('file-icon').textContent = '📕';
+            } else if (file.type.startsWith('image/')) {
+                els.pdfPreviewContainer.style.display = 'none';
+                els.imagePreview.style.display = 'block';
+                document.getElementById('file-icon').textContent = '🖼️';
+                const reader = new FileReader();
+                reader.onload = (e) => { els.imagePreview.src = e.target.result; }
+                reader.readAsDataURL(file);
+            }
+
+            requestTranscription(file);
+        }
+
+        async function requestTranscription(file) {
+            const GEMINI_API_KEY = 'YOUR_GEMINI_API_KEY';
+            
+            if (!GEMINI_API_KEY || GEMINI_API_KEY === 'YOUR_GEMINI_API_KEY') {
+                console.log('Modo manual (sem chave)');
+                setTimeout(() => {
+                    els.processingBox.style.display = 'none';
+                    els.transcriptionResult.style.display = 'block';
+                    els.leadSection.style.display = 'block';
+                    els.btnResetUpload.style.display = 'inline-block';
+                    
+                    els.transcriptionResult.innerHTML = `
+                        <div style="background: #fff5f5; border: 1px solid #feb2b2; padding: 15px; border-radius: 12px; margin-bottom: 20px;">
+                            <div style="color: #c53030; font-weight: 700; margin-bottom: 5px;">📍 Arquivo Recebido com Sucesso</div>
+                            <p style="font-size: 0.9rem; color: #742a2a;">Recebemos sua imagem. <b>Por favor, informe seus dados logo abaixo</b> para finalizarmos seu atendimento.</p>
+                        </div>
+                    `;
+                    els.leadSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }, 1000);
+                return;
+            }
+
+            const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`;
+
+            try {
+                const reader = new FileReader();
+                const base64Promise = new Promise((resolve) => {
+                    reader.onload = () => resolve(reader.result.split(',')[1]);
+                    reader.readAsDataURL(file);
+                });
+                const base64Data = await base64Promise;
+                
+                const prompt = `Analise esta foto de receita médica e extraia:
+                1. Quais os medicamentos prescritos?
+                2. Qual a dosagem e instrução de uso de cada um?
+                3. Responda em Português de forma clara e profissional.`;
+
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contents: [{ parts: [{ text: prompt }, { inline_data: { mime_type: file.type, data: base64Data } }] }]
+                    })
+                });
+
+                const data = await response.json();
+                if (data.error) throw new Error(data.error.message);
+                
+                const aiText = data.candidates[0].content.parts[0].text;
+                window.lastTranscriptionText = aiText;
+
+                els.processingBox.style.display = 'none';
+                els.transcriptionResult.style.display = 'block';
+                els.leadSection.style.display = 'block';
+                els.btnResetUpload.style.display = 'inline-block';
+
+                els.transcriptionResult.innerHTML = `
+                    <div style="background: #f0fff4; border: 1px solid #c6f6d5; padding: 20px; border-radius: 12px; margin-bottom: 20px;">
+                        <div style="color: #2f855a; font-weight: 700; margin-bottom: 10px;">✅ Leitura da IA Concluída</div>
+                        <div style="white-space: pre-wrap; font-size: 0.95rem; line-height: 1.6; color: #1a202c;">${aiText.replace(/\*/g, '')}</div>
+                    </div>
+                `;
+                els.leadSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+            } catch (err) {
+                console.error('Erro na IA:', err);
+                els.processingBox.style.display = 'none';
+                els.transcriptionResult.style.display = 'block';
+                els.leadSection.style.display = 'block';
+                els.btnResetUpload.style.display = 'inline-block';
+                els.transcriptionResult.innerHTML = `
+                    <div style="background: #fffaf0; border: 1px solid #fbd38d; padding: 15px; border-radius: 12px; margin-bottom: 20px;">
+                        <div style="color: #c05621; font-weight: 700; margin-bottom: 5px;">⚠️ Análise por Equipe Médica</div>
+                        <p style="font-size: 0.9rem; color: #7b341e;">Não foi possível ler automaticamente agora. Prossiga com seus dados abaixo para análise manual.</p>
+                    </div>
+                `;
+                els.leadSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+        }
+
+        const finalSendBtn = document.getElementById('final-send-btn');
+        finalSendBtn.addEventListener('click', async function () {
+            const name = document.getElementById('lead-name').value;
+            const email = document.getElementById('lead-email').value;
+            const whatsapp = document.getElementById('lead-whatsapp').value;
+
+            if (!name || !email || !whatsapp) {
+                alert('Informe Nome, E-mail e WhatsApp para continuar.');
+                return;
+            }
+
+            finalSendBtn.disabled = true;
+            finalSendBtn.textContent = 'Enviando...';
+
+            try {
+                const fileExt = selectedFile.name.split('.').pop();
+                const fileName = `${Date.now()}.${fileExt}`;
+                const filePath = `prescriptions/${fileName}`;
+
+                const { error: uploadError } = await supabase.storage.from('prescriptions').upload(filePath, selectedFile);
+                if (uploadError) throw uploadError;
+
+                const { data: urlData } = supabase.storage.from('prescriptions').getPublicUrl(filePath);
+                
+                const { data: leadArr, error: dbError } = await supabase.from('leads').insert([{
+                    nome: name, email: email, whatsapp: whatsapp, arquivo_url: urlData.publicUrl, tipo_origem: 'Receita', status: 'Novo'
+                }]).select('id');
+
+                if (dbError) throw dbError;
+
+                if (window.lastTranscriptionText && leadArr && leadArr[0]) {
+                    await supabase.from('transcription_results').insert([{
+                        lead_id: leadArr[0].id, full_text: window.lastTranscriptionText, status: 'processed'
+                    }]);
+                }
+
+                document.getElementById('lead-form').style.display = 'none';
+                document.getElementById('success-message').style.display = 'block';
+                els.btnResetUpload.style.display = 'none';
+                setTimeout(() => { window.location.href = 'index.html'; }, 3000);
+            } catch (err) {
+                alert('Erro ao enviar: ' + err.message);
+                finalSendBtn.disabled = false;
+                finalSendBtn.textContent = 'Enviar para o médico';
+            }
+        });
+
+        function resetFile() {
+            selectedFile = null;
+            els.fileInput.value = '';
+            els.dropZone.style.display = 'flex';
+            els.previewBox.style.display = 'none';
+            els.leadSection.style.display = 'none';
+            els.transcriptionResult.style.display = 'none';
+            document.getElementById('lead-form').style.display = 'block';
+            document.getElementById('success-message').style.display = 'none';
+        }
+
+        els.dropZone.addEventListener('dragover', (e) => { e.preventDefault(); els.dropZone.style.borderColor = '#0047AB'; });
+        els.dropZone.addEventListener('dragleave', () => { els.dropZone.style.borderColor = '#CBD5E0'; });
+        els.dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            els.dropZone.style.borderColor = '#CBD5E0';
+            handleFile(e.dataTransfer.files[0]);
+        });
+    </script>
+</body>
+
+</html>
