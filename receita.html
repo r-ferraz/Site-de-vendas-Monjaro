@@ -449,9 +449,26 @@
         }
 
         async function requestTranscription(file) {
+            console.log('Iniciando transcrição para:', file.name);
+            
             // Configuração da API do Gemini
-            // ATENÇÃO: Substitua 'YOUR_GEMINI_API_KEY' pela sua chave real!
             const GEMINI_API_KEY = 'YOUR_GEMINI_API_KEY';
+            
+            // Validação da Chave
+            if (!GEMINI_API_KEY || GEMINI_API_KEY === 'YOUR_GEMINI_API_KEY') {
+                console.warn('GEMINI_API_KEY não configurada.');
+                setTimeout(() => {
+                    processingBox.style.display = 'none';
+                    transcriptionResult.style.display = 'block';
+                    leadSection.style.display = 'block';
+                    btnResetUpload.style.display = 'inline-block';
+                    transcriptionResult.innerHTML = `<div class="transcription-title">Aviso</div>
+                        <p>A transcrição automática está desativada (Chave de API ausente). Por favor, preencha os dados abaixo e nossa equipe fará a leitura manual.</p>`;
+                    leadSection.scrollIntoView({ behavior: 'smooth' });
+                }, 1500);
+                return;
+            }
+
             const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`;
 
             try {
@@ -477,6 +494,15 @@
                 });
 
                 const data = await response.json();
+                
+                if (data.error) {
+                    throw new Error(data.error.message || 'Erro na API do Gemini');
+                }
+
+                if (!data.candidates || !data.candidates[0].content) {
+                    throw new Error('Resposta da IA em formato inesperado');
+                }
+
                 const aiText = data.candidates[0].content.parts[0].text;
 
                 // Atualizar a UI com o resultado real
