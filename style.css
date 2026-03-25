@@ -33,7 +33,7 @@
 
     /* Spacing */
     --section-padding: 100px 5%;
-    --container-width: 1200px;
+    --container-width: 1400px;
 
     /* Transitions */
     --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -582,10 +582,10 @@ footer {
 /* GLP-1 Section */
 .glp1-container {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 1fr 1.25fr;
     grid-template-areas: "image text";
-    gap: 60px;
-    align-items: start;
+    gap: 40px;
+    align-items: stretch; /* Aligns heights of both cards */
 }
 
 .glp1-image {
@@ -597,14 +597,30 @@ footer {
     align-items: center;
     justify-content: center;
     overflow: hidden;
-    padding: 40px 20px;
+    padding: 60px 40px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.04);
 }
 
 .glp1-text {
     grid-area: text;
     background: var(--bg-offwhite);
-    padding: 40px;
-    border-radius: 20px;
+    padding: 60px;
+    border-radius: 30px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.04);
+}
+
+.glp1-text h2 {
+    font-size: 3rem;
+    margin-bottom: 30px;
+    line-height: 1.1;
+}
+
+.glp1-text p {
+    font-size: 1.2rem;
+    line-height: 1.6;
 }
 
 .glp1-image img {
