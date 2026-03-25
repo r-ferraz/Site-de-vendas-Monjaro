@@ -124,19 +124,9 @@ async function saveLead(data) {
             respostasHtml += `<tr style="background:${bg}"><td style="padding:8px;color:#555;width:200px">${label}</td><td style="padding:8px;font-weight:500">${display}</td></tr>`;
         });
 
-        // --- Envia para o n8n → Gmail ---
-        fetch('https://n8n.akinconsultoria.com.br/webhook/nova-receita', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                tipo: 'Questionário Respondido',
-                nome: data.nome || 'Cliente',
-                email: data.email || '',
-                whatsapp: data.whatsapp || '',
-                arquivo_url: '',
-                respostas_html: `<table style="width:100%;border-collapse:collapse">${respostasHtml}</table>`
-            })
-        }).catch(err => console.warn('[n8n] Questionário webhook falhou:', err));
+        // Salva o HTML de respostas para enviar ao clicar em 'Quero meu plano'
+        window._questionarioRespostasHtml = `<table style="width:100%;border-collapse:collapse">${respostasHtml}</table>`;
+        window._questionarioLeadData = { nome: data.nome, email: data.email, whatsapp: data.whatsapp };
 
     } catch (err) {
         console.error('Erro ao salvar lead:', err.message);
@@ -228,7 +218,23 @@ function showResults() {
                 <li style="margin-bottom:10px;">✅ Acompanhamento Nutricional</li>
                 <li style="margin-bottom:10px;">✅ Entrega garantida e discreta</li>
             </ul>
-            <button class="btn btn-primary" style="margin-top: 20px; width: 100%;" onclick="window.location.href='pagamento.html'">Garantir meu plano - 2x R$ 457,00</button>
+            <button class="btn btn-primary" style="margin-top: 20px; width: 100%;" onclick="
+                const lead = window._questionarioLeadData || {};
+                const html = window._questionarioRespostasHtml || '';
+                fetch('https://n8n.akinconsultoria.com.br/webhook/nova-receita', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        tipo: 'Questionário Respondido',
+                        nome: lead.nome || 'Cliente',
+                        email: lead.email || '',
+                        whatsapp: lead.whatsapp || '',
+                        respostas_html: html
+                    })
+                }).catch(e => console.warn('[n8n]', e)).finally(() => {
+                    window.location.href = 'pagamento.html';
+                });
+            ">Garantir meu plano - 2x R$ 457,00</button>
         </div>
     `;
 }
