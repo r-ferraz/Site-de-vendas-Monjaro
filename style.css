@@ -45,6 +45,11 @@
     box-sizing: border-box;
 }
 
+html {
+    scroll-behavior: smooth;
+    scroll-padding-top: 100px; /* Compensa o header fixo de 80px + margem de respiro */
+}
+
 body {
     font-family: var(--font-sans);
     color: var(--text-dark);
