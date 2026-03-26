@@ -520,9 +520,9 @@ footer {
 }
 
 .offering-img {
-    height: 200px;
+    height: 250px;
     background-size: cover;
-    background-position: top center;
+    background-position: center 20%;
 }
 
 .offering-body {
