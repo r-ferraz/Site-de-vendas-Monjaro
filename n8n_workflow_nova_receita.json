@@ -69,6 +69,38 @@
     },
     {
       "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.body.tipo }}",
+              "operation": "equal",
+              "value2": "Novo Lead - Avaliação Gratuita"
+            }
+          ]
+        }
+      },
+      "id": "node-if-tipo",
+      "name": "IF - Tipo",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [300, 420]
+    },
+    {
+      "parameters": {
+        "sendTo": "SEU_EMAIL@gmail.com",
+        "subject": "=🚨 NOVO LEAD RÁPIDO - {{ $json.body.nome }}",
+        "emailType": "html",
+        "message": "=<div style=\"font-family:Arial,sans-serif;max-width:600px;margin:auto;border:1px solid #e0e0e0;border-radius:12px;overflow:hidden\"><div style=\"background:#F59E0B;padding:20px 24px\"><h2 style=\"color:white;margin:0\">🚨 Novo Lead - Contato Imediato</h2><p style=\"color:#fef3c7;margin:4px 0 0\">Site Maori</p></div><div style=\"padding:24px\"><p>Um paciente iniciou o questionário e deixou o contato. <strong>Chame-o imediatamente no WhatsApp!</strong></p><table style=\"width:100%;border-collapse:collapse;margin-top:20px\"><tr><td style=\"padding:8px 0;color:#555;width:120px\">👤 Nome</td><td style=\"padding:8px 0;font-weight:bold\">{{ $json.body.nome }}</td></tr><tr style=\"background:#f9f9f9\"><td style=\"padding:8px 0;color:#555\">📱 WhatsApp</td><td style=\"padding:8px 0\">{{ $json.body.whatsapp }}</td></tr><tr><td style=\"padding:8px 0;color:#555\">📧 E-mail</td><td style=\"padding:8px 0\">{{ $json.body.email }}</td></tr></table><a href=\"https://wa.me/55{{ $json.body.whatsapp ? $json.body.whatsapp.replace(/\\D/g, '') : '' }}\" style=\"display:block;width:100%;text-align:center;background:#25D366;color:white;padding:12px;text-decoration:none;border-radius:8px;margin-top:20px;font-weight:bold\">Chamar no WhatsApp Agora</a></div></div>"
+      },
+      "id": "node-gmail-lead",
+      "name": "Gmail - Alerta Comercial",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2,
+      "position": [540, 320],
+      "credentials": { "gmailOAuth2": { "id": "", "name": "Gmail account" } }
+    },
+    {
+      "parameters": {
         "sendTo": "SEU_EMAIL@gmail.com",
         "subject": "=📝 Questionário Respondido - {{ $json.body.nome }}",
         "emailType": "html",
@@ -78,7 +110,7 @@
       "name": "Gmail - Respostas Questionário",
       "type": "n8n-nodes-base.gmail",
       "typeVersion": 2,
-      "position": [340, 420],
+      "position": [540, 520],
       "credentials": { "gmailOAuth2": { "id": "", "name": "Gmail account" } }
     }
   ],
@@ -90,7 +122,13 @@
       "main": [[{ "node": "Gmail - Receita com PDF", "type": "main", "index": 0 }]]
     },
     "Webhook - Novo Questionário": {
-      "main": [[{ "node": "Gmail - Respostas Questionário", "type": "main", "index": 0 }]]
+      "main": [[{ "node": "IF - Tipo", "type": "main", "index": 0 }]]
+    },
+    "IF - Tipo": {
+      "main": [
+        [{ "node": "Gmail - Alerta Comercial", "type": "main", "index": 0 }],
+        [{ "node": "Gmail - Respostas Questionário", "type": "main", "index": 0 }]
+      ]
     }
   },
   "active": false,
