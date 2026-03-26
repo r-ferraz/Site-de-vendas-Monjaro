@@ -491,6 +491,66 @@
             });
         });
     </script>
+
+    <!-- Floating Action Button -->
+    <div id="fab-container" style="position: fixed; bottom: 30px; right: 30px; z-index: 9998; font-family: var(--font-sans); display: flex; flex-direction: column; align-items: flex-end;">
+        <!-- Tooltip Bubble -->
+        <div id="fab-menu" style="display: none; background: white; border-radius: 12px; padding: 20px; box-shadow: 0 10px 40px rgba(0,0,0,0.15); margin-bottom: 15px; width: 280px; border: 1px solid #edf2f7; transform-origin: bottom right; animation: popIn 0.3s ease;">
+            <p style="margin: 0 0 15px 0; font-weight: 600; color: var(--primary-dark); text-align: center; font-size: 1.1rem;">Você já tem uma receita médica?</p>
+            <div style="display: flex; flex-direction: column; gap: 10px;">
+                <a href="receita.html?v=4" style="background: var(--primary-blue); color: white; text-decoration: none; padding: 12px; border-radius: 8px; text-align: center; font-weight: 500; font-size: 0.95rem; transition: opacity 0.2s;">Sim, enviar documento</a>
+                <a href="questionario.html" style="background: transparent; border: 1px solid var(--primary-blue); color: var(--primary-blue); text-decoration: none; padding: 12px; border-radius: 8px; text-align: center; font-weight: 500; font-size: 0.95rem; transition: background 0.2s;">Não tenho, preencher formulário</a>
+            </div>
+        </div>
+
+        <!-- Main Button -->
+        <button id="fab-btn" style="background: #8b5e3c; color: white; border: none; padding: 15px 25px; border-radius: 50px; font-size: 1.1rem; font-weight: 600; cursor: pointer; box-shadow: 0 4px 20px rgba(139, 94, 60, 0.4); display: flex; align-items: center; gap: 10px; transition: transform 0.2s, background 0.2s;">
+            <span style="font-size: 1.3rem;">✨</span> Quero emagrecer agora
+        </button>
+    </div>
+
+    <style>
+        #fab-btn:hover {
+            transform: scale(1.05);
+            background: #724c30 !important;
+        }
+        #fab-menu a:hover {
+            opacity: 0.9;
+        }
+        @keyframes popIn {
+            from { opacity: 0; transform: scale(0.9) translateY(10px); }
+            to { opacity: 1; transform: scale(1) translateY(0); }
+        }
+        @media (max-width: 768px) {
+            #fab-btn {
+                padding: 12px 20px;
+                font-size: 1rem;
+            }
+            #fab-container {
+                bottom: 20px;
+                right: 20px;
+            }
+        }
+    </style>
+    <script>
+        document.getElementById('fab-btn').addEventListener('click', function(e) {
+            e.stopPropagation();
+            var menu = document.getElementById('fab-menu');
+            if (menu.style.display === 'none' || menu.style.display === '') {
+                menu.style.display = 'block';
+            } else {
+                menu.style.display = 'none';
+            }
+        });
+        
+        document.addEventListener('click', function(event) {
+            var isClickInside = document.getElementById('fab-container').contains(event.target);
+            var menu = document.getElementById('fab-menu');
+            if (!isClickInside && menu.style.display === 'block') {
+                menu.style.display = 'none';
+            }
+        });
+    </script>
     <script src="main.js"></script>
 </body>
 </html>
