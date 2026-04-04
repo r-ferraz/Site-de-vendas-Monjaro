@@ -861,6 +861,36 @@ footer {
         gap: 40px;
     }
 }
+    /* Centralize Content for Mobile */
+    .hero-content, 
+    .journey-step, 
+    .offering-card, 
+    .med-card, 
+    .glp1-text, 
+    .mb-card,
+    .mb-hero-content,
+    .mb-why-container {
+        text-align: center !important;
+        align-items: center;
+    }
+
+    .hero-content p, .glp1-text p, .journey-step p, .mb-hero-content p {
+        text-align: center !important;
+    }
+
+    .hero-cta {
+        justify-content: center;
+    }
+
+    .journey-step {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .benefit-item {
+        justify-content: center;
+    }
 
 @media (max-width: 480px) {
     .hero-content h1 {
