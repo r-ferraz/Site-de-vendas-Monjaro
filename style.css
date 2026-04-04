@@ -917,9 +917,8 @@ footer {
     }
 
     .mb-feature-list {
-        width: fit-content;
-        margin: 0 auto;
-        align-items: flex-start !important;
+        width: 100%;
+        align-items: center !important;
     }
 
     .mb-feature-item {
@@ -927,7 +926,7 @@ footer {
         align-items: flex-start;
         justify-content: flex-start;
         text-align: left;
-        width: 100%;
+        width: 265px;
     }
 
     .mb-feature-item span {
