@@ -49,6 +49,13 @@ function renderStep() {
 
     html += `</div>`;
     stepContent.innerHTML = html;
+    
+    // Mostra o botão Continuar APENAS se não for pergunta de opção única (pois a única avança automático)
+    if (q.type !== 'single') {
+        nextBtn.style.display = 'block';
+    } else {
+        nextBtn.style.display = 'none';
+    }
 }
 
 window.selectOption = (id, value, type) => {
