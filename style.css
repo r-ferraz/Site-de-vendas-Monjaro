@@ -923,10 +923,12 @@ footer {
 
     .mb-feature-item {
         font-size: 1.1rem;
+        display: flex !important;
+        gap: 15px;
         align-items: flex-start;
         justify-content: flex-start;
         text-align: left;
-        width: 265px;
+        width: 280px;
     }
 
     .mb-feature-item span {
