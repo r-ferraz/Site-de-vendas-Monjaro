@@ -400,6 +400,22 @@
         const btnCep = document.getElementById('btn-cep');
         const cepError = document.getElementById('cep-error');
 
+        const urlParams = new URLSearchParams(window.location.search);
+        const planoId = urlParams.get('plano') || '20';
+        const planoValor = parseFloat(urlParams.get('valor') || '1200.00');
+        const planoPrecoFormatado = urlParams.get('preco') || '1.200';
+
+        // Atualizar o resumo visual do pedido
+        document.addEventListener('DOMContentLoaded', () => {
+            const resumoNome = document.querySelector('.product-info p:first-child');
+            const resumoSubtotal = document.querySelectorAll('.price-row span:last-child')[0];
+            const resumoTotal = document.querySelector('.price-total span:last-child');
+            
+            if (resumoNome) resumoNome.innerText = `Plano Maori - Mounjaro® ${planoId}mg`;
+            if (resumoSubtotal) resumoSubtotal.innerText = `R$ ${planoPrecoFormatado},00`;
+            if (resumoTotal) resumoTotal.innerText = `R$ ${planoPrecoFormatado},00`;
+        });
+
         async function searchCep() {
             const cep = cepInput.value.replace(/\D/g, '');
             if (cep.length !== 8) {
@@ -578,7 +594,7 @@
                     name: leadData.nome_cartao || "Cliente Site (Sem Nome Redigido)",
                     email: leadData.email,
                     phone: leadData.whatsapp,
-                    value: 1200.00 /* Valor que o Webhook do n8n vai processar na cobranca final */
+                    value: planoValor /* Agora o valor é dinâmico vindo da URL! */
                 };
 
                 // 👇 COLOQUE O LINK DO SEU WEBHOOK N8N (DE PRODUÇÃO) DENTRO DAS ASPAS AQUI EMBAIXO 👇

@@ -204,7 +204,7 @@
             <div class="oferta-body">
                 <h2 style="font-size: 1.5rem; color: var(--primary-dark); margin-bottom: 24px;">📦 Escolha seu Protocolo Monetário</h2>
                 
-                <div class="protocolo-box">
+                <div class="protocolo-box" data-plano="20" data-valor="1200.00" data-preco="1.200" onclick="selectPlano(this)" style="cursor: pointer; border-color: var(--primary-blue); background: #f0f9ff;">
                     <h3 style="font-size: 1.3rem; margin-bottom: 5px; display: flex; align-items: center; gap: 8px;">🔹 20mg</h3>
                     <p style="color: #64748b; margin-bottom: 15px;">Ideal para início e ajuste do corpo.</p>
                     <div style="display: flex; align-items: center; gap: 15px;">
@@ -213,7 +213,7 @@
                     </div>
                 </div>
 
-                <div class="protocolo-box">
+                <div class="protocolo-box" data-plano="60" data-valor="2800.00" data-preco="2.800" onclick="selectPlano(this)" style="cursor: pointer;">
                     <h3 style="font-size: 1.3rem; margin-bottom: 5px; display: flex; align-items: center; gap: 8px;">🔹 60mg</h3>
                     <p style="color: #64748b; margin-bottom: 15px;">Focado em continuidade e máxima performance.</p>
                     <div style="display: flex; align-items: center; gap: 15px;">
@@ -339,11 +339,38 @@
     </main>
 
     <script>
+        let planoSelecionado = {
+            id: '20',
+            valor: '1200.00',
+            preco: '1.200'
+        };
+
+        function selectPlano(element) {
+            // Remover seleção de todas as caixas
+            document.querySelectorAll('.protocolo-box').forEach(box => {
+                box.style.borderColor = '#e2e8f0';
+                box.style.background = 'white';
+            });
+
+            // Adicionar seleção na caixa clicada
+            element.style.borderColor = 'var(--primary-blue)';
+            element.style.background = '#f0f9ff';
+
+            // Atualizar dados do plano
+            planoSelecionado = {
+                id: element.getAttribute('data-plano'),
+                valor: element.getAttribute('data-valor'),
+                preco: element.getAttribute('data-preco')
+            };
+        }
+
         document.getElementById('btn-avancar').addEventListener('click', function() {
-            // Pick up the "next" parameter from URL
             const urlParams = new URLSearchParams(window.location.search);
-            const redirectUrl = urlParams.get('next') || 'index.html';
-            window.location.href = redirectUrl;
+            const nextBase = urlParams.get('next') || 'pagamento.html';
+            
+            // Adicionar os dados do plano na URL de destino
+            const finalUrl = `${nextBase}?plano=${planoSelecionado.id}&valor=${planoSelecionado.valor}&preco=${planoSelecionado.preco}`;
+            window.location.href = finalUrl;
         });
     </script>
 </body>
