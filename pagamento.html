@@ -404,6 +404,7 @@
         const planoId = urlParams.get('plano') || '20';
         const planoValor = parseFloat(urlParams.get('valor') || '1200.00');
         const planoPrecoFormatado = urlParams.get('preco') || '1.200';
+        const receitaStatus = urlParams.get('receita') || 'nao'; // Captura o status vindo da oferta
 
         // Atualizar o resumo visual do pedido
         document.addEventListener('DOMContentLoaded', () => {
@@ -576,6 +577,8 @@
                 complemento: document.getElementById('complemento').value,
                 nome_cartao: document.getElementById('card-name').value,
                 parcelamento: document.getElementById('parcelamento').value,
+                plano_escolhido: `Mounjaro ${planoId}mg`, // Novo campo
+                tem_receita: receitaStatus, // Novo campo
                 status: 'Aguardando Pagamento',
                 tipo_origem: 'Checkout'
             };
@@ -594,7 +597,9 @@
                     name: leadData.nome_cartao || "Cliente Site (Sem Nome Redigido)",
                     email: leadData.email,
                     phone: leadData.whatsapp,
-                    value: planoValor /* Agora o valor é dinâmico vindo da URL! */
+                    value: planoValor,
+                    plano: leadData.plano_escolhido, // Passa pro n8n/Typebot
+                    receita: leadData.tem_receita // Passa pro n8n/Typebot
                 };
 
                 // 👇 COLOQUE O LINK DO SEU WEBHOOK N8N (DE PRODUÇÃO) DENTRO DAS ASPAS AQUI EMBAIXO 👇

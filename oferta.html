@@ -367,9 +367,10 @@
         document.getElementById('btn-avancar').addEventListener('click', function() {
             const urlParams = new URLSearchParams(window.location.search);
             const nextBase = urlParams.get('next') || 'pagamento.html';
+            const receitaStatus = urlParams.get('receita') || 'nao'; // Pega o status do index.html
             
-            // Adicionar os dados do plano na URL de destino
-            const finalUrl = `${nextBase}?plano=${planoSelecionado.id}&valor=${planoSelecionado.valor}&preco=${planoSelecionado.preco}`;
+            // Adicionar os dados do plano E o status da receita na URL de destino
+            const finalUrl = `${nextBase}?plano=${planoSelecionado.id}&valor=${planoSelecionado.valor}&preco=${planoSelecionado.preco}&receita=${receitaStatus}`;
             window.location.href = finalUrl;
         });
     </script>
