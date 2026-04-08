@@ -358,9 +358,10 @@ function showResults() {
                         respostas_html: html
                     })
                 }).catch(e => console.warn('[n8n]', e)).finally(() => {
-                    window.location.href = 'pagamento.html';
+                    const currentParams = window.location.search;
+                    window.location.href = 'pagamento.html' + currentParams;
                 });
-            ">Garantir meu plano - 2x R$ 457,00</button>
+            ">Garantir meu Plano Personalizado</button>
         </div>
     `;
 }

@@ -75,7 +75,7 @@
             overflow-x: auto;
             margin: 30px 0;
             border-radius: 12px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
         }
 
         table {
@@ -171,9 +171,11 @@
             .comparacao-box {
                 grid-template-columns: 1fr;
             }
+
             .oferta-header {
                 padding: 30px 20px;
             }
+
             .oferta-body {
                 padding: 30px 20px;
             }
@@ -182,7 +184,8 @@
 </head>
 
 <body>
-    <header style="height: 80px; background: white; border-bottom: 1px solid #edf2f7; display: flex; align-items: center; position: sticky; top: 0; z-index: 100;">
+    <header
+        style="height: 80px; background: white; border-bottom: 1px solid #edf2f7; display: flex; align-items: center; position: sticky; top: 0; z-index: 100;">
         <div class="container" style="display: flex; justify-content: center; width: 100%;">
             <a href="index.html" class="logo">
                 <img src="assets/Asset 10.svg" alt="Maori Saúde" style="height: 40px; width: auto;">
@@ -194,18 +197,24 @@
         <div class="oferta-card">
             <div class="oferta-header">
                 <div class="badge-destaque">⭐ Oferta de Início de Tratamento</div>
-                <h1 style="font-size: clamp(2rem, 5vw, 2.8rem); line-height: 1.1; margin-bottom: 15px;">20% OFF na primeira aquisição</h1>
+                <h1 style="font-size: clamp(2rem, 5vw, 2.8rem); line-height: 1.1; margin-bottom: 15px;">20% OFF na
+                    primeira aquisição</h1>
                 <p style="font-size: 1.2rem; opacity: 0.9;">+ Avaliação médica cortesia inclusa!</p>
-                <div style="margin-top: 20px; display: inline-flex; align-items: center; gap: 8px; background: rgba(0,0,0,0.2); padding: 10px 20px; border-radius: 50px;">
+                <div
+                    style="margin-top: 20px; display: inline-flex; align-items: center; gap: 8px; background: rgba(0,0,0,0.2); padding: 10px 20px; border-radius: 50px;">
                     💳 Parcelamento em até 10x no cartão
                 </div>
             </div>
 
             <div class="oferta-body">
-                <h2 style="font-size: 1.5rem; color: var(--primary-dark); margin-bottom: 24px;">📦 Escolha seu Protocolo Monetário</h2>
-                
-                <div class="protocolo-box" data-plano="20" data-valor="1200.00" data-preco="1.200" onclick="selectPlano(this)" style="cursor: pointer; border-color: var(--primary-blue); background: #f0f9ff;">
-                    <h3 style="font-size: 1.3rem; margin-bottom: 5px; display: flex; align-items: center; gap: 8px;">🔹 20mg</h3>
+                <h2 style="font-size: 1.5rem; color: var(--primary-dark); margin-bottom: 24px;">📦 Escolha seu Protocolo
+                    Monetário</h2>
+
+                <div class="protocolo-box" data-plano="20" data-valor="1200.00" data-preco="1.200"
+                    onclick="selectPlano(this)"
+                    style="cursor: pointer; border-color: var(--primary-blue); background: #f0f9ff;">
+                    <h3 style="font-size: 1.3rem; margin-bottom: 5px; display: flex; align-items: center; gap: 8px;">🔹
+                        20mg</h3>
                     <p style="color: #64748b; margin-bottom: 15px;">Ideal para início e ajuste do corpo.</p>
                     <div style="display: flex; align-items: center; gap: 15px;">
                         <span class="price-risked">De R$ 1.500</span>
@@ -213,8 +222,10 @@
                     </div>
                 </div>
 
-                <div class="protocolo-box" data-plano="60" data-valor="2800.00" data-preco="2.800" onclick="selectPlano(this)" style="cursor: pointer;">
-                    <h3 style="font-size: 1.3rem; margin-bottom: 5px; display: flex; align-items: center; gap: 8px;">🔹 60mg</h3>
+                <div class="protocolo-box" data-plano="60" data-valor="2800.00" data-preco="2.800"
+                    onclick="selectPlano(this)" style="cursor: pointer;">
+                    <h3 style="font-size: 1.3rem; margin-bottom: 5px; display: flex; align-items: center; gap: 8px;">🔹
+                        60mg</h3>
                     <p style="color: #64748b; margin-bottom: 15px;">Focado em continuidade e máxima performance.</p>
                     <div style="display: flex; align-items: center; gap: 15px;">
                         <span class="price-risked">De R$ 3.500</span>
@@ -224,7 +235,9 @@
 
                 <hr style="border: none; border-top: 1px solid #edf2f7; margin: 40px 0;">
 
-                <h2 style="font-size: 1.5rem; color: var(--primary-dark); margin-bottom: 10px; display: flex; align-items: center; gap: 10px;">⏱️ Duração estimada</h2>
+                <h2
+                    style="font-size: 1.5rem; color: var(--primary-dark); margin-bottom: 10px; display: flex; align-items: center; gap: 10px;">
+                    ⏱️ Duração estimada</h2>
                 <p style="color: #64748b; margin-bottom: 20px;">Referência por dose semanal aplicada:</p>
 
                 <div class="table-container">
@@ -265,29 +278,43 @@
                         </tbody>
                     </table>
                 </div>
-                <p style="font-size: 0.85rem; color: #94a3b8; text-align: right; font-style: italic;">(Demais doses variam conforme ajuste médico)</p>
+                <p style="font-size: 0.85rem; color: #94a3b8; text-align: right; font-style: italic;">(Demais doses
+                    variam conforme ajuste médico)</p>
 
                 <div class="alert-box">
-                    <h4 style="color: #d97706; margin-bottom: 10px; font-size: 1.1rem; display: flex; align-items: center; gap: 8px;">⚠️ Agora, sendo direto com você</h4>
-                    <p style="color: #92400e; line-height: 1.6;">Hoje, no mercado tradicional, você tem duas opções: <br><strong>Pagar caro por um tratamento padronizado</strong> ou <strong>seguir um protocolo Maori ajustado ao seu corpo.</strong></p>
+                    <h4
+                        style="color: #d97706; margin-bottom: 10px; font-size: 1.1rem; display: flex; align-items: center; gap: 8px;">
+                        ⚠️ Agora, sendo direto com você</h4>
+                    <p style="color: #92400e; line-height: 1.6;">Hoje, no mercado tradicional, você tem duas opções:
+                        <br><strong>Pagar caro por um tratamento padronizado</strong> ou <strong>seguir um protocolo
+                            Maori ajustado ao seu corpo.</strong>
+                    </p>
                 </div>
 
                 <div class="comparacao-box">
                     <div class="comp-item comp-tradicional">
-                        <h4 style="color: #475569; margin-bottom: 15px; font-size: 1.1rem;">💰 No modelo tradicional (farmácia)</h4>
-                        <p style="color: #64748b; margin-bottom: 15px; font-size: 0.9rem;">Você paga, em média:<br><strong style="font-size: 1.1rem; color: #334155;">R$ 2.000 a R$ 3.500 por mês</strong></p>
+                        <h4 style="color: #475569; margin-bottom: 15px; font-size: 1.1rem;">💰 No modelo tradicional
+                            (farmácia)</h4>
+                        <p style="color: #64748b; margin-bottom: 15px; font-size: 0.9rem;">Você paga, em
+                            média:<br><strong style="font-size: 1.1rem; color: #334155;">R$ 2.000 a R$ 3.500 por
+                                mês</strong></p>
                         <ul class="x-list" style="padding: 0;">
                             <li>sem ajuste fino</li>
                             <li>sem estratégia</li>
                             <li>sem acompanhamento real</li>
                         </ul>
                     </div>
-                    
+
                     <div class="comp-item comp-maori">
                         <h4 style="color: #166534; margin-bottom: 15px; font-size: 1.1rem;">🧬 Aqui na Maori</h4>
-                        <p style="color: #15803d; margin-bottom: 15px; font-size: 0.95rem; font-weight: 500;">Você não compra "produto".<br>Você entra em um tratamento estruturado.</p>
-                        <p style="margin-bottom: 8px; font-size: 0.9rem;"><strong>20mg</strong> (dose padrão) ≈ <strong>R$ 300 / semana</strong></p>
-                        <p style="margin-bottom: 15px; font-size: 0.9rem;"><strong>60mg</strong> (dose padrão) ≈ <strong>R$ 233 / semana</strong></p>
+                        <p style="color: #15803d; margin-bottom: 15px; font-size: 0.95rem; font-weight: 500;">Você não
+                            compra "produto".<br>Você entra em um tratamento estruturado.</p>
+                        <p style="margin-bottom: 8px; font-size: 0.9rem;"><strong>20mg</strong> (dose padrão) ≈
+                            <strong>R$ 300 / semana</strong>
+                        </p>
+                        <p style="margin-bottom: 15px; font-size: 0.9rem;"><strong>60mg</strong> (dose padrão) ≈
+                            <strong>R$ 233 / semana</strong>
+                        </p>
                         <hr style="border:none; border-top: 1px solid #bbf7d0; margin-bottom: 15px;">
                         <ul class="check-list" style="padding: 0; color: #166534; font-size: 0.9rem;">
                             <li>Menor custo por semana</li>
@@ -297,41 +324,52 @@
                     </div>
                 </div>
 
-                <h3 style="font-size: 1.3rem; color: var(--primary-dark); margin: 40px 0 20px 0;">✨ Incluso no Tratamento</h3>
+                <h3 style="font-size: 1.3rem; color: var(--primary-dark); margin: 40px 0 20px 0;">✨ Incluso no
+                    Tratamento</h3>
                 <ul class="check-list" style="padding: 0;">
                     <li>Avaliação médica</li>
                     <li>Estratégia personalizada</li>
                     <li>Kit completo de aplicação</li>
                     <li>Suporte constante da equipe de enfermagem</li>
                 </ul>
-                <p style="background: #f1f5f9; padding: 15px; border-radius: 8px; text-align: center; color: var(--primary-dark); font-weight: 600; margin-top: 20px;">
+                <p
+                    style="background: #f1f5f9; padding: 15px; border-radius: 8px; text-align: center; color: var(--primary-dark); font-weight: 600; margin-top: 20px;">
                     Aplicação no conforto da sua casa ou na clínica.
                 </p>
 
                 <hr style="border: none; border-top: 1px solid #edf2f7; margin: 40px 0;">
 
-                <div style="background: #fafafa; padding: 30px; border-radius: 16px; border: 1px solid #e5e5e5; margin-bottom: 30px;">
-                    <h3 style="font-size: 1.3rem; color: #333; margin-bottom: 20px; text-align: center;">🔑 Decisão simples</h3>
-                    
+                <div
+                    style="background: #fafafa; padding: 30px; border-radius: 16px; border: 1px solid #e5e5e5; margin-bottom: 30px;">
+                    <h3 style="font-size: 1.3rem; color: #333; margin-bottom: 20px; text-align: center;">🔑 Decisão
+                        simples</h3>
+
                     <div style="display: flex; flex-direction: column; gap: 15px;">
-                        <div style="background: white; padding: 15px; border-radius: 12px; border-left: 4px solid var(--primary-blue); box-shadow: 0 2px 10px rgba(0,0,0,0.02);">
+                        <div
+                            style="background: white; padding: 15px; border-radius: 12px; border-left: 4px solid var(--primary-blue); box-shadow: 0 2px 10px rgba(0,0,0,0.02);">
                             <span style="color: var(--text-muted); font-size: 0.9rem;">Se você quer testar</span>
-                            <div style="font-weight: 700; font-size: 1.2rem; color: var(--primary-dark);">→ Escolha 20mg</div>
+                            <div style="font-weight: 700; font-size: 1.2rem; color: var(--primary-dark);">→ Escolha 20mg
+                            </div>
                         </div>
-                        <div style="background: white; padding: 15px; border-radius: 12px; border-left: 4px solid #10b981; box-shadow: 0 2px 10px rgba(0,0,0,0.02);">
+                        <div
+                            style="background: white; padding: 15px; border-radius: 12px; border-left: 4px solid #10b981; box-shadow: 0 2px 10px rgba(0,0,0,0.02);">
                             <span style="color: var(--text-muted); font-size: 0.9rem;">Se você quer fazer direito</span>
                             <div style="font-weight: 700; font-size: 1.2rem; color: #047857;">→ Escolha 60mg</div>
                         </div>
                     </div>
 
                     <div style="margin-top: 25px; padding-top: 20px; border-top: 1px dashed #d4d4d4;">
-                        <p style="color: #666; font-size: 0.9rem; margin-bottom: 10px;"><strong>⚠️ Importante:</strong> As doses variam entre 2,5mg e 15mg por semana, conforme resposta clínica.</p>
-                        <p style="color: #666; font-size: 0.85rem; margin-bottom: 5px;">👉 A base mais comum é 5mg/semana</p>
-                        <p style="color: #666; font-size: 0.85rem; margin-bottom: 0;">👉 Ajustes impactam diretamente na duração</p>
+                        <p style="color: #666; font-size: 0.9rem; margin-bottom: 10px;"><strong>⚠️ Importante:</strong>
+                            As doses variam entre 2,5mg e 15mg por semana, conforme resposta clínica.</p>
+                        <p style="color: #666; font-size: 0.85rem; margin-bottom: 5px;">👉 A base mais comum é
+                            5mg/semana</p>
+                        <p style="color: #666; font-size: 0.85rem; margin-bottom: 0;">👉 Ajustes impactam diretamente na
+                            duração</p>
                     </div>
                 </div>
 
-                <button id="btn-avancar" class="btn btn-primary" style="width: 100%; padding: 22px; font-size: 1.2rem; box-shadow: 0 10px 20px rgba(0, 71, 171, 0.2); animation: popIn 0.5s ease; margin-top: 20px;">
+                <button id="btn-avancar" class="btn btn-primary"
+                    style="width: 100%; padding: 22px; font-size: 1.2rem; box-shadow: 0 10px 20px rgba(0, 71, 171, 0.2); animation: popIn 0.5s ease; margin-top: 20px;">
                     Sim, Quero Aproveitar a Oferta!
                 </button>
             </div>
@@ -364,15 +402,16 @@
             };
         }
 
-        document.getElementById('btn-avancar').addEventListener('click', function() {
+        document.getElementById('btn-avancar').addEventListener('click', function () {
             const urlParams = new URLSearchParams(window.location.search);
             const nextBase = urlParams.get('next') || 'pagamento.html';
             const receitaStatus = urlParams.get('receita') || 'nao'; // Pega o status do index.html
-            
+
             // Adicionar os dados do plano E o status da receita na URL de destino
             const finalUrl = `${nextBase}?plano=${planoSelecionado.id}&valor=${planoSelecionado.valor}&preco=${planoSelecionado.preco}&receita=${receitaStatus}`;
             window.location.href = finalUrl;
         });
     </script>
 </body>
+
 </html>
