@@ -392,23 +392,14 @@
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
-        // Supabase Configuration
-        const SUPABASE_URL = 'https://pzewkvmaewnijwhxkqaj.supabase.co';
-        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB6ZXdrdm1hZXduaWp3aHhrcWFqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMxNjk0ODQsImV4cCI6MjA4ODc0NTQ4NH0.a42vFvm5vUcZ3euBUoNW_QuWM9MKPW2W7ZvcCyl_P4Y';
-        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
-        const cepInput = document.getElementById('cep');
-        const btnCep = document.getElementById('btn-cep');
-        const cepError = document.getElementById('cep-error');
-
         const urlParams = new URLSearchParams(window.location.search);
         const planoId = urlParams.get('plano') || '20';
         const planoValor = parseFloat(urlParams.get('valor') || '1200.00');
         const planoPrecoFormatado = urlParams.get('preco') || '1.200';
-        const receitaStatus = urlParams.get('receita') || 'nao'; // Captura o status vindo da oferta
+        const receitaStatus = urlParams.get('receita') || 'nao';
 
-        // Atualizar o resumo visual do pedido usando IDs específicos
-        document.addEventListener('DOMContentLoaded', () => {
+        // Atualizar o resumo visual IMEDIATAMENTE (sem depender do Supabase)
+        function updateSummary() {
             const resumoNome = document.getElementById('summary-product-name');
             const resumoSubtotal = document.getElementById('summary-subtotal');
             const resumoTotal = document.getElementById('summary-total');
@@ -417,8 +408,28 @@
             if (resumoNome) resumoNome.innerText = `Plano Maori - Mounjaro® ${planoId}mg`;
             if (resumoSubtotal) resumoSubtotal.innerText = `R$ ${planoPrecoFormatado},00`;
             if (resumoTotal) resumoTotal.innerText = `R$ ${planoPrecoFormatado},00`;
-            if (discountRow) discountRow.style.display = 'none'; // Garante que o desconto antigo sumiu
-        });
+            if (discountRow) discountRow.style.display = 'none';
+        }
+
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', updateSummary);
+        } else {
+            updateSummary();
+        }
+
+        // Supabase Initialization
+        let supabase;
+        try {
+            const SUPABASE_URL = 'https://pzewkvmaewnijwhxkqaj.supabase.co';
+            const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB6ZXdrdm1hZXduaWp3aHhrcWFqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMxNjk0ODQsImV4cCI6MjA4ODc0NTQ4NH0.a42vFvm5vUcZ3euBUoNW_QuWM9MKPW2W7ZvcCyl_P4Y';
+            supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        } catch (e) {
+            console.error('Supabase failed to load:', e);
+        }
+
+        const cepInput = document.getElementById('cep');
+        const btnCep = document.getElementById('btn-cep');
+        const cepError = document.getElementById('cep-error');
 
         async function searchCep() {
             const cep = cepInput.value.replace(/\D/g, '');
