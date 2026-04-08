@@ -345,17 +345,18 @@
                         style="background-image: url('assets/semaglutida.png'); background-size: contain; background-repeat: no-repeat; background-position: center;">
                     </div>
                     <div>
-                        <p style="font-weight: 600;">Plano Maori - Wegovy®</p>
+                        <p style="font-weight: 600;" id="summary-product-name">Plano Maori - Mounjaro®</p>
                         <p style="font-size: 0.85rem; color: #718096;">Tratamento mensal + Suporte</p>
                     </div>
                 </div>
-                <div class="price-row">
+                <div class="price-row" id="summary-subtotal-row">
                     <span>Subtotal</span>
-                    <span>R$ 2.198,00</span>
+                    <span id="summary-subtotal">R$ 1.200,00</span>
                 </div>
-                <div class="price-row" style="color: #48bb78;">
+                <!-- Linha de desconto escondida por padrão para o Mounjaro -->
+                <div class="price-row" id="summary-discount-row" style="display: none; color: #48bb78;">
                     <span>Desconto Maori</span>
-                    <span>- R$ 1.283,15</span>
+                    <span>- R$ 0,00</span>
                 </div>
                 <div class="price-row">
                     <span>Entrega</span>
@@ -363,7 +364,7 @@
                 </div>
                 <div class="price-total">
                     <span>Total</span>
-                    <span>R$ 914,85</span>
+                    <span id="summary-total">R$ 1.200,00</span>
                 </div>
 
                 <div style="margin-top: 30px;">
@@ -406,15 +407,17 @@
         const planoPrecoFormatado = urlParams.get('preco') || '1.200';
         const receitaStatus = urlParams.get('receita') || 'nao'; // Captura o status vindo da oferta
 
-        // Atualizar o resumo visual do pedido
+        // Atualizar o resumo visual do pedido usando IDs específicos
         document.addEventListener('DOMContentLoaded', () => {
-            const resumoNome = document.querySelector('.product-info p:first-child');
-            const resumoSubtotal = document.querySelectorAll('.price-row span:last-child')[0];
-            const resumoTotal = document.querySelector('.price-total span:last-child');
+            const resumoNome = document.getElementById('summary-product-name');
+            const resumoSubtotal = document.getElementById('summary-subtotal');
+            const resumoTotal = document.getElementById('summary-total');
+            const discountRow = document.getElementById('summary-discount-row');
             
             if (resumoNome) resumoNome.innerText = `Plano Maori - Mounjaro® ${planoId}mg`;
             if (resumoSubtotal) resumoSubtotal.innerText = `R$ ${planoPrecoFormatado},00`;
             if (resumoTotal) resumoTotal.innerText = `R$ ${planoPrecoFormatado},00`;
+            if (discountRow) discountRow.style.display = 'none'; // Garante que o desconto antigo sumiu
         });
 
         async function searchCep() {
