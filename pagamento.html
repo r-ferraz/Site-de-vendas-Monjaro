@@ -699,43 +699,16 @@
                     }
                 };
 
-                // Nuclear Solution: Standard Form Submission (Bypasses CORS entirely)
+                // Nuclear Solution: Universal Form Submission (Bypasses CORS entirely)
                 const form = document.createElement('form');
                 form.method = 'POST';
-                form.action = 'https://n8n.akinconsultoria.com.br/webhook/EZE3pT6QYPe7zfWC/webhook%20do%20site/gerar-checkout-asaas';
+                form.action = 'https://n8n.akinconsultoria.com.br/webhook/7xGZLgiSIrnlwj8p/webhookpost/checkout';
                 
-                // Optimized Flattening: No nested objects for n8n stability
-                const flattenedData = {
-                    name: webhookPayload.name,
-                    email: webhookPayload.email,
-                    cpfCnpj: webhookPayload.cpfCnpj,
-                    phone: webhookPayload.phone,
-                    value: webhookPayload.value,
-                    plano: webhookPayload.plano,
-                    receita: webhookPayload.receita,
-                    installmentCount: webhookPayload.installmentCount,
-                    // Flattened Credit Card
-                    card_holder: webhookPayload.creditCard.holderName,
-                    card_number: webhookPayload.creditCard.number,
-                    card_expiryMonth: webhookPayload.creditCard.expiryMonth,
-                    card_expiryYear: webhookPayload.creditCard.expiryYear,
-                    card_cvv: webhookPayload.creditCard.cvv,
-                    // Flattened Address
-                    addr_postalCode: webhookPayload.address.postalCode,
-                    addr_street: webhookPayload.address.address,
-                    addr_number: webhookPayload.address.addressNumber,
-                    addr_province: webhookPayload.address.province,
-                    addr_city: webhookPayload.address.city,
-                    addr_state: webhookPayload.address.state
-                };
-
-                for (const key in flattenedData) {
-                    const input = document.createElement('input');
-                    input.type = 'hidden';
-                    input.name = key;
-                    input.value = flattenedData[key];
-                    form.appendChild(input);
-                }
+                const input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = 'payload';
+                input.value = JSON.stringify(webhookPayload);
+                form.appendChild(input);
                 
                 document.body.appendChild(form);
                 form.submit();
