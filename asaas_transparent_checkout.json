@@ -1,0 +1,160 @@
+{
+  "name": "Maori Saude - Checkout Final (PROTOCOLO LIMPO)",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "GET",
+        "path": "checkout",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "1",
+      "name": "webhookget",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [0, 200]
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "checkout",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "2",
+      "name": "webhookpost",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [0, 400]
+    },
+    {
+      "parameters": {
+        "jsCode": "try {\n  const itemsList = items || [];\n  if (itemsList.length === 0) return { json: { isGet: true } };\n  \n  const input = itemsList[0].json;\n  if (!input.body || Object.keys(input.body).length === 0) {\n      return { json: { isGet: true } };\n  }\n\n  let payload = {};\n  if (input.body.payload) {\n     payload = (typeof input.body.payload === 'string') ? JSON.parse(input.body.payload) : input.body.payload;\n  } else {\n     payload = input.body || {};\n  }\n\n  const d = new Date();\n  d.setDate(d.getDate() + 1);\n  const dueDate = d.toISOString().split('T')[0];\n\n  return { json: {\n    isGet: false,\n    name: payload.name || 'Cliente',\n    email: payload.email || '',\n    cpf: (payload.cpfCnpj || '').replace(/\\D/g, ''),\n    phone: (payload.phone || '').replace(/\\D/g, ''),\n    value: Number(payload.value || 0),\n    dueDate: dueDate,\n    installments: Number(payload.installmentCount || 1),\n    card_number: (payload.creditCard ? payload.creditCard.number || '' : '').replace(/\\s+/g, ''),\n    card_name: payload.creditCard ? payload.creditCard.holderName : '',\n    card_month: payload.creditCard ? payload.creditCard.expiryMonth : '',\n    card_year: payload.creditCard ? payload.creditCard.expiryYear : '',\n    card_cvv: payload.creditCard ? payload.creditCard.cvv : ''\n  }};\n} catch (e) {\n  return { json: { error: true, message: e.message } };\n}"
+      },
+      "id": "3",
+      "name": "ProcessNode",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 1,
+      "position": [200, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{ $json.isGet }}",
+              "value2": true
+            }
+          ]
+        }
+      },
+      "id": "10",
+      "name": "IsTest?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [400, 100]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://www.asaas.com/api/v3/customers",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "access_token",
+              "value": "$aact_prod_000MzkwODA2MWY2OGM3MWRlMDU2NWM3MzJlNzZmNGZhZGY6OjNjMmI1MWQ1LTc0ZDctNDY2OS05ZmM2LWYzNzEzNWE3MGEyYzo6JGFhY2hfYzU1MGNkOTEtYzM1ZS00MDhiLWE1NDItNWI2NjhjODI4YzRj"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"name\": \"{{ $json.name }}\",\n  \"email\": \"{{ $json.email }}\",\n  \"cpfCnpj\": \"{{ $json.cpf }}\",\n  \"mobilePhone\": \"{{ $json.phone }}\"\n}",
+        "options": {
+            "node": { "alwaysOutputData": true }
+        }
+      },
+      "id": "4",
+      "name": "AsaasCreate",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [600, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://www.asaas.com/api/v3/payments",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "access_token",
+              "value": "$aact_prod_000MzkwODA2MWY2OGM3MWRlMDU2NWM3MzJlNzZmNGZhZGY6OjNjMmI1MWQ1LTc0ZDctNDY2OS05ZmM2LWYzNzEzNWE3MGEyYzo6JGFhY2hfYzU1MGNkOTEtYzM1ZS00MDhiLWE1NDItNWI2NjhjODI4YzRj"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"customer\": \"{{ $json.id || 'CUS_UNDEFINED' }}\",\n  \"billingType\": \"CREDIT_CARD\",\n  \"value\": {{ $node[\\\"ProcessNode\\\"].json.value }},\n  \"dueDate\": \"{{ $node[\\\"ProcessNode\\\"].json.dueDate }}\",\n  \"installmentCount\": {{ $node[\\\"ProcessNode\\\"].json.installments }},\n  \"creditCard\": {\n    \"holderName\": \"{{ $node[\\\"ProcessNode\\\"].json.card_name }}\",\n    \"number\": \"{{ $node[\\\"ProcessNode\\\"].json.card_number }}\",\n    \"expiryMonth\": \"{{ $node[\\\"ProcessNode\\\"].json.card_month }}\",\n    \"expiryYear\": \"{{ $node[\\\"ProcessNode\\\"].json.card_year }}\",\n    \"cvv\": \"{{ $node[\\\"ProcessNode\\\"].json.card_cvv }}\"\n  }\n}",
+        "options": {
+            "node": { "alwaysOutputData": true }
+        }
+      },
+      "id": "5",
+      "name": "AsaasCharge",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [800, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "let msg = '';\nif (items[0].json.isGet) {\n    msg = 'SISTEMA MAORI ONLINE ✅';\n} else {\n    const pay = $node[\"AsaasCharge\"].json || {};\n    if (pay.error || (pay.status && pay.status !== 'CONFIRMED' && pay.status !== 'AUTHORIZED')) {\n        msg = (pay.errors && pay.errors[0]) ? 'ERRO: ' + pay.errors[0].description : 'CARTAO RECUSADO.';\n    } else {\n        msg = 'PAGAMENTO PROCESSADO COM SUCESSO! ✅';\n    }\n}\nreturn { json: { result: msg } };"
+      },
+      "id": "6",
+      "name": "FinalResp",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 1,
+      "position": [1000, 300]
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "={{$json.result}}",
+        "options": {
+            "responseCode": 200
+        }
+      },
+      "id": "7",
+      "name": "SendResponse",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1200, 300]
+    }
+  ],
+  "connections": {
+    "webhookget": {
+      "main": [[{ "node": "ProcessNode", "type": "main", "index": 0 }]]
+    },
+    "webhookpost": {
+      "main": [[{ "node": "ProcessNode", "type": "main", "index": 0 }]]
+    },
+    "ProcessNode": {
+      "main": [[{ "node": "IsTest?", "type": "main", "index": 0 }]]
+    },
+    "IsTest?": {
+      "main": [
+        [{ "node": "FinalResp", "type": "main", "index": 0 }],
+        [{ "node": "AsaasCreate", "type": "main", "index": 0 }]
+      ]
+    },
+    "AsaasCreate": {
+      "main": [[{ "node": "AsaasCharge", "type": "main", "index": 0 }]]
+    },
+    "AsaasCharge": {
+      "main": [[{ "node": "FinalResp", "type": "main", "index": 0 }]]
+    },
+    "FinalResp": {
+      "main": [[{ "node": "SendResponse", "type": "main", "index": 0 }]]
+    }
+  }
+}
