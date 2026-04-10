@@ -73,33 +73,10 @@ window.selectOption = (id, value, type) => {
     renderStep();
 };
 
-// Supabase Configuration
-const SUPABASE_URL = 'https://pzewkvmaewnijwhxkqaj.supabase.co';
-const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB6ZXdrdm1hZXduaWp3aHhrcWFqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMxNjk0ODQsImV4cCI6MjA4ODc0NTQ4NH0.a42vFvm5vUcZ3euBUoNW_QuWM9MKPW2W7ZvcCyl_P4Y';
-const supabaseClient = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY) : null;
 
 async function saveLead(data) {
-    if (!supabaseClient) {
-        console.warn('Supabase not initialized');
-        return;
-    }
-
     try {
-        const { error } = await supabaseClient
-            .from('leads')
-            .insert([
-                {
-                    nome: data.nome || 'Cliente Questionário',
-                    whatsapp: data.whatsapp,
-                    email: data.email,
-                    status: 'Novo',
-                    tipo_origem: 'Questionário',
-                    metadata: data
-                }
-            ]);
-
-        if (error) throw error;
-        console.log('Lead salvo com sucesso!');
+        console.log('Iniciando processamento do lead...');
 
         // --- Monta o resumo das respostas para o email ---
         const labels = {
@@ -133,19 +110,31 @@ async function saveLead(data) {
 
         // Salva o HTML de respostas para enviar ao clicar em 'Quero meu plano'
         window._questionarioRespostasHtml = `<table style="width:100%;border-collapse:collapse">${respostasHtml}</table>`;
-        window._questionarioLeadData = { nome: data.nome, email: data.email, whatsapp: data.whatsapp };
+        window._questionarioLeadData = { nome: data.nome, email: data.email, whatsapp: data.whatsapp, respostas_triagem: data };
 
-        // Integração de Nome e WhatsApp para oferta de Avaliação Online Gratuita
-        fetch('https://n8n.akinconsultoria.com.br/webhook/novo-questionario', {
+        // Integração para captura de lead
+        const response = await fetch('https://n8n.akinconsultoria.com.br/webhook/novo-questionario', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 tipo: 'Novo Lead - Avaliação Gratuita',
+                lead_id: sessionStorage.getItem('lead_id') || '',
                 nome: data.nome,
                 whatsapp: data.whatsapp,
-                email: data.email
+                email: data.email,
+                respostas_triagem: data,
+                tipo_origem: 'Questionário',
+                utm_source: sessionStorage.getItem('utm_source') || '',
+                utm_medium: sessionStorage.getItem('utm_medium') || '',
+                utm_campaign: sessionStorage.getItem('utm_campaign') || ''
             })
-        }).catch(e => console.warn('[n8n lead capture]', e));
+        });
+
+        const res = await response.json();
+        if (res.lead_id) {
+            sessionStorage.setItem('lead_id', res.lead_id);
+            console.log('[Flow] Lead ID persistido:', res.lead_id);
+        }
 
     } catch (err) {
         console.error('Erro ao salvar lead:', err.message);
@@ -352,14 +341,26 @@ function showResults() {
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         tipo: 'Questionário Respondido',
+                        lead_id: sessionStorage.getItem('lead_id') || '',
                         nome: lead.nome || 'Cliente',
                         email: lead.email || '',
                         whatsapp: lead.whatsapp || '',
-                        respostas_html: html
+                        respostas_html: html,
+                        respostas_triagem: userData,
+                        tipo_origem: 'Questionário',
+                        utm_source: sessionStorage.getItem('utm_source') || '',
+                        utm_medium: sessionStorage.getItem('utm_medium') || '',
+                        utm_campaign: sessionStorage.getItem('utm_campaign') || ''
                     })
-                }).catch(e => console.warn('[n8n]', e)).finally(() => {
-                    const currentParams = window.location.search;
-                    window.location.href = 'oferta.html' + currentParams;
+                })
+                .then(r => r.json())
+                .then(res => {
+                    if (res.lead_id) sessionStorage.setItem('lead_id', res.lead_id);
+                })
+                .catch(e => console.warn('[n8n]', e))
+                .finally(() => {
+                    const targetUrl = window.addUtmsToUrl ? window.addUtmsToUrl('oferta.html') : 'oferta.html' + window.location.search;
+                    window.location.href = targetUrl;
                 });
             ">Garantir meu Plano Personalizado</button>
         </div>

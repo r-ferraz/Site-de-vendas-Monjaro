@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Maori | Condições Especiais</title>
     <link rel="stylesheet" href="style.css">
+    <script src="utm.js"></script>
     <style>
         body {
             background-color: var(--bg-offwhite);
@@ -419,8 +420,10 @@
             const nextBase = urlParams.get('next') || 'pagamento.html';
             const receitaStatus = urlParams.get('receita') || 'nao'; // Pega o status do index.html
 
-            // Adicionar os dados do plano E o status da receita na URL de destino
-            const finalUrl = `${nextBase}?plano=${planoSelecionado.id}&valor=${planoSelecionado.valor}&preco=${planoSelecionado.preco}&receita=${receitaStatus}`;
+            // Adicionar os dados do plano, status da receita e lead_id na URL de destino
+            const leadId = sessionStorage.getItem('lead_id') || '';
+            const baseFinalUrl = `${nextBase}?plano=${planoSelecionado.id}&valor=${planoSelecionado.valor}&preco=${planoSelecionado.preco}&receita=${receitaStatus}&lead_id=${leadId}`;
+            const finalUrl = window.addUtmsToUrl ? window.addUtmsToUrl(baseFinalUrl) : baseFinalUrl;
             window.location.href = finalUrl;
         });
     </script>

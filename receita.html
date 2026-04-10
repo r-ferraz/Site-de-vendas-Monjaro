@@ -7,6 +7,7 @@
     <title>Maori | Enviar Receita</title>
     <!-- Version: 3.2.0 - Force update cache -->
     <link rel="stylesheet" href="style.css">
+    <script src="utm.js"></script>
     <style>
         body {
             background-color: var(--bg-offwhite);
@@ -378,7 +379,6 @@
         </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
     <script>
         console.log('HealthTrack Engine: Online (receita v3.4 - carimbo interno)');
@@ -439,8 +439,6 @@
 
 
         document.addEventListener('DOMContentLoaded', () => {
-        const SUPABASE_URL = 'https://pzewkvmaewnijwhxkqaj.supabase.co';
-        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB6ZXdrdm1hZXduaWp3aHhrcWFqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMxNjk0ODQsImV4cCI6MjA4ODc0NTQ4NH0.a42vFvm5vUcZ3euBUoNW_QuWM9MKPW2W7ZvcCyl_P4Y';
         
         // Elementos Globais
         const els = {
@@ -464,13 +462,6 @@
         // --- INICIALIZAÇÃO ---
         window.addEventListener('load', () => {
             console.log('Site carregado v3.2.0');
-            try {
-                if (!window.supabase) throw new Error('Biblioteca Supabase não encontrada.');
-                supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-                console.log('Supabase pronto.');
-            } catch (e) {
-                console.error('Erro no Supabase:', e);
-            }
         });
 
         // Captura de erro global para ajudar o usuário
@@ -641,45 +632,51 @@
                     alert('⚠️ Erro ao carimbar arquivo: ' + stampErr.message + '\n\nO arquivo será enviado sem carimbo.');
                 }
 
-                const { error: uploadError } = await supabase.storage.from('prescriptions').upload(filePath, fileToUpload);
-                if (uploadError) throw uploadError;
-
-
-
-                const { data: urlData } = supabase.storage.from('prescriptions').getPublicUrl(filePath);
-                
-                const { data: leadArr, error: dbError } = await supabase.from('leads').insert([{
-                    nome: name, email: email, whatsapp: whatsapp, arquivo_url: urlData.publicUrl, tipo_origem: 'Receita', status: 'Novo'
-                }]).select('id');
-
-                if (dbError) throw dbError;
-
-                if (window.lastTranscriptionText && leadArr && leadArr[0]) {
-                    await supabase.from('transcription_results').insert([{
-                        lead_id: leadArr[0].id, full_text: window.lastTranscriptionText, status: 'processed'
-                    }]);
-                }
+                // A gravação em Banco (Supabase) e Storage agora é feita apenas via n8n 
+                // para evitar exposição da anon key no frontend e centralizar logs.
 
                 // Notifica o n8n para enviar email com o PDF anexado
-                fetch('https://n8n.akinconsultoria.com.br/webhook/nova-receita', {
+                const reader = new FileReader();
+                const base64File = await new Promise((resolve) => {
+                    reader.onload = () => resolve(reader.result.split(',')[1]);
+                    reader.readAsDataURL(fileToUpload);
+                });
+
+                const response = await fetch('https://n8n.akinconsultoria.com.br/webhook/nova-receita', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
+                        lead_id: sessionStorage.getItem('lead_id') || '',
                         nome: name,
                         email: email,
                         whatsapp: whatsapp,
-                        arquivo_url: urlData.publicUrl
+                        transcricao: window.lastTranscriptionText || '',
+                        arquivo_base64: base64File,
+                        arquivo_nome: selectedFile.name,
+                        tipo_origem: 'Receita',
+                        utm_source: sessionStorage.getItem('utm_source') || '',
+                        utm_medium: sessionStorage.getItem('utm_medium') || '',
+                        utm_campaign: sessionStorage.getItem('utm_campaign') || ''
                     })
-                }).catch(err => console.warn('[n8n] Webhook não respondeu:', err));
+                });
+
+                const res = await response.json();
+                // Suporta múltiplos formatos de retorno (lead_id direto ou leadArr[0].id)
+                const returnedId = res.lead_id || (res.leadArr && res.leadArr[0] && res.leadArr[0].id);
+                if (returnedId) {
+                    sessionStorage.setItem('lead_id', returnedId);
+                    console.log('[Flow] Lead ID persistido via Receita:', returnedId);
+                }
 
                 document.getElementById('lead-form').style.display = 'none';
                 document.getElementById('success-message').style.display = 'block';
                 els.btnResetUpload.style.display = 'none';
                 
                 // Redireciona mantendo os parâmetros de preço e escolha
-                const currentParams = window.location.search;
-                setTimeout(() => { window.location.href = 'oferta.html' + currentParams; }, 3000);
+                const targetUrl = window.addUtmsToUrl ? window.addUtmsToUrl('oferta.html') : 'oferta.html' + window.location.search;
+                setTimeout(() => { window.location.href = targetUrl; }, 3000);
             } catch (err) {
+                console.error('[UPLOAD ERROR]', err);
                 alert('Erro ao enviar: ' + err.message);
                 finalSendBtn.disabled = false;
                 finalSendBtn.textContent = 'Enviar para o médico';
