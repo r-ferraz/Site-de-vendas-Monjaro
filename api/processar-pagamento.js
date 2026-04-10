@@ -65,8 +65,8 @@ module.exports = async (req, res) => {
                 status: 'aprovado'
             }]);
 
-        // 4. Enviar WhatsApp (UAZAPI) via Background (sem await para não travar a resposta)
-        enviarWhatsApp({
+        // 4. Enviar WhatsApp (UAZAPI)
+        await enviarWhatsApp({
             whatsapp: whatsapp || customer.phone,
             nome: customer.name,
             produto: produto || 'Plano Maori',
