@@ -548,8 +548,8 @@
                         produto: leadData.plano_escolhido
                     };
 
-                    // URL DO SEU WEBHOOK NO N8N (Substitua se necessário)
-                    const N8N_WEBHOOK_URL = 'https://n8n-akin.uazapi.com/webhook/maori-vendas';
+                    // URL DO SEU WEBHOOK NO N8N (Corrigido para o seu domínio)
+                    const N8N_WEBHOOK_URL = 'https://n8n.akinconsultoria.com.br/webhook/maori-vendas';
 
                     const response = await fetch(N8N_WEBHOOK_URL, {
                         method: 'POST',
