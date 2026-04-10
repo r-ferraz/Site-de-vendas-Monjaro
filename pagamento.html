@@ -699,11 +699,11 @@
                     }
                 };
 
-                // Nuclear Solution: Universal Form Submission (Bypasses CORS entirely)
+                // Isolated Path Strategy: Resolves "Workflow could not be started"
                 const form = document.createElement('form');
-                form.method = 'POST';
                 const webhookId = 'Z051I1EZP8lTqTID';
-                form.action = `https://n8n.akinconsultoria.com.br/webhook/${webhookId}/webhookpost/checkout`;
+                form.method = 'POST';
+                form.action = `https://n8n.akinconsultoria.com.br/webhook/${webhookId}/checkout-pay`;
                 
                 const input = document.createElement('input');
                 input.type = 'hidden';
