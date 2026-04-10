@@ -330,6 +330,10 @@
                         <strong>15. ACEITE</strong><br>
                         Ao prosseguir com o atendimento, o paciente declara que leu, compreendeu e aceita integralmente os termos acima.
                     </div>
+                    <label style="display: flex; align-items: flex-start; gap: 10px; cursor: pointer; font-size: 0.95rem; font-weight: 500; margin-bottom: 12px;">
+                        <input type="checkbox" id="tem-receita-checkbox" style="margin-top: 4px; width: 18px; height: 18px; cursor: pointer;">
+                        <span>Eu tenho receita médica (Marque se já possuir a prescrição do medicamento)</span>
+                    </label>
                     <label style="display: flex; align-items: flex-start; gap: 10px; cursor: pointer; font-size: 0.95rem; font-weight: 500;">
                         <input type="checkbox" id="accept-terms" style="margin-top: 4px; width: 18px; height: 18px; cursor: pointer;">
                         <span>Declaro que li, compreendi e aceito integralmente os termos acima.</span>
@@ -706,7 +710,10 @@
                             expiryYear: expYear,
                             cvv: document.getElementById('card-cvv').value
                         }
-                    }
+                    },
+                    temReceita: document.getElementById('tem-receita-checkbox').checked ? 'sim' : 'nao',
+                    whatsapp: leadData.whatsapp,
+                    produto: leadData.plano_escolhido
                 };
 
                 const response = await fetch('/api/processar-pagamento', {

@@ -1,7 +1,7 @@
-require('dotenv').config();
 const express = require('express');
 const axios = require('axios');
 const cors = require('cors');
+const { createClient } = require('@supabase/supabase-js');
 
 const app = express();
 app.use(express.json());
@@ -10,19 +10,62 @@ app.use(cors());
 // Servir arquivos estáticos da pasta atual
 app.use(express.static(__dirname));
 
-// Configurações Asaas
-const ASAAS_API_KEY = process.env.ASAAS_API_KEY;
-const IS_SANDBOX = process.env.ASAAS_ENVIRONMENT === 'sandbox';
-const ASAAS_URL = IS_SANDBOX ? 'https://sandbox.asaas.com/api/v3' : 'https://api.asaas.com/v3';
+// Configurações Supabase
+const supabase = createClient(
+    process.env.SUPABASE_URL,
+    process.env.SUPABASE_KEY
+);
 
-console.log(`[SERVER] Modo: ${IS_SANDBOX ? 'SANDBOX' : 'PRODUÇÃO'}`);
+// Função para enviar WhatsApp via UAZAPI
+async function enviarWhatsApp({ whatsapp, nome, produto, temReceita }) {
+    try {
+        const numeroLimpo = whatsapp.replace(/\D/g, '');
+        const apikey = process.env.UAZAPI_KEY;
+        const url = process.env.UAZAPI_URL;
+
+        const mensagem = temReceita ? 
+            `Oi, ${nome}, tudo bem?
+Seja bem-vindo à Maori.
+Recebemos sua receita e o pagamento do seu tratamento (${produto}), e já fizemos a validação inicial por aqui.
+Para seguirmos com a liberação, precisamos de um passo rápido:
+uma videochamada com um dos nossos médicos.
+É uma consulta breve, apenas para validar e atualizar sua prescrição dentro dos nossos protocolos, garantindo mais segurança e precisão no seu tratamento.
+Após isso, já liberamos o envio direto para sua casa.
+Se você tiver exames recentes, pode me enviar por aqui.
+Isso nos ajuda a ajustar ainda melhor sua estratégia junto com o tratamento.
+Posso te enviar os horários disponíveis?` : 
+            `Oi, ${nome}, tudo bem?
+Seja bem-vindo à Maori.
+Recebemos o pagamento do seu tratamento (${produto}) e já iniciamos seu onboarding por aqui.
+O próximo passo agora é agendar sua teleconsulta com um dos nossos médicos.
+Nessa consulta, vamos avaliar seu caso e estruturar seu protocolo de forma personalizada, para iniciar seu tratamento com mais precisão e segurança.
+Após essa etapa, já organizamos o envio da sua medicação direto para sua casa.
+Se você tiver exames recentes, pode me enviar por aqui também.
+Isso ajuda bastante a entender seu momento atual e direcionar melhor sua estratégia.
+Posso te enviar os horários disponíveis?`;
+
+        console.log(`[WA] Enviando para ${numeroLimpo}...`);
+
+        await axios.post(url, {
+            number: `55${numeroLimpo}`,
+            options: { delay: 1200, presence: "composing" },
+            textMessage: { text: mensagem }
+        }, {
+            headers: { 'apikey': apikey, 'Content-Type': 'application/json' }
+        });
+
+        console.log(`[WA] Mensagem enviada com sucesso para ${nome}`);
+    } catch (error) {
+        console.error('[WA-ERROR] Erro ao enviar WhatsApp:', error.response?.data || error.message);
+    }
+}
 
 // Endpoint para processar pagamento
 app.post('/api/processar-pagamento', async (req, res) => {
     try {
-        const { customer, payment } = req.body;
+        const { customer, payment, temReceita, whatsapp, produto } = req.body;
 
-        console.log(`[PAYMENT] Iniciando processo para: ${customer.email}`);
+        console.log(`[PAYMENT] Iniciando processo para: ${customer.email} (${produto})`);
         
         // Log de diagnóstico
         console.log("[DEBUG] Payload recebido no pagamento:", JSON.stringify({
@@ -33,12 +76,11 @@ app.post('/api/processar-pagamento', async (req, res) => {
                 number: payment.creditCard?.number ? '****' + payment.creditCard.number.slice(-4) : 'AUSENTE',
                 expiryMonth: payment.creditCard?.expiryMonth,
                 expiryYear: payment.creditCard?.expiryYear,
-                cvv: payment.creditCard?.cvv ? '***' : 'AUSENTE'
+                cvv: payment.creditCard?.cvv || payment.creditCard?.ccv ? '***' : 'AUSENTE'
             }
         }, null, 2));
 
         // 1. Criar ou Buscar Cliente no Asaas
-        // O ideal seria buscar por CPF antes de criar, mas seguiremos o fluxo sugerido
         const customerResponse = await axios.post(`${ASAAS_URL}/customers`, customer, {
             headers: {
                 'access_token': ASAAS_API_KEY,
@@ -60,14 +102,6 @@ app.post('/api/processar-pagamento', async (req, res) => {
             paymentData.creditCard.ccv = paymentData.creditCard.cvv;
         }
 
-        // Debug: Logar chaves presentes (sem dados sensíveis)
-        console.log(`[ASAAS] Campos do Cartão: ${Object.keys(paymentData.creditCard || {}).join(', ')}`);
-        if (paymentData.creditCard?.cvv) {
-            console.log(`[ASAAS] CVV presente (${paymentData.creditCard.cvv.length} dígitos)`);
-        } else {
-            console.warn(`[ASAAS] ⚠️ CVV AUSENTE OU VAZIO!`);
-        }
-
         const paymentResponse = await axios.post(`${ASAAS_URL}/payments`, paymentData, {
             headers: {
                 'access_token': ASAAS_API_KEY,
@@ -76,6 +110,35 @@ app.post('/api/processar-pagamento', async (req, res) => {
         });
 
         console.log(`[ASAAS] Pagamento Gerado: ${paymentResponse.data.id} - Status: ${paymentResponse.data.status}`);
+
+        // 3. Salvar no Supabase (Tabela Clientes)
+        try {
+            const { error: dbError } = await supabase
+                .from('clientes')
+                .insert([{
+                    nome: customer.name,
+                    email: customer.email,
+                    cpf: customer.cpfCnpj,
+                    whatsapp: whatsapp || customer.phone,
+                    produto: produto || 'Plano Maori',
+                    tem_receita: temReceita === 'sim',
+                    payment_id: paymentResponse.data.id,
+                    status: 'aprovado'
+                }]);
+            
+            if (dbError) console.error("[DB-ERROR] Erro ao salvar cliente:", dbError);
+            else console.log("[DB] Cliente salvo com sucesso no Supabase.");
+        } catch (dbErr) {
+            console.error("[DB-CRITICAL] Falha catastrófica no banco:", dbErr);
+        }
+
+        // 4. Enviar WhatsApp Automático
+        enviarWhatsApp({
+            whatsapp: whatsapp || customer.phone,
+            nome: customer.name,
+            produto: produto || 'Plano Maori',
+            temReceita: temReceita === 'sim'
+        });
 
         res.json({
             success: true,
