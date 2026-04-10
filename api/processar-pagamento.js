@@ -22,6 +22,15 @@ module.exports = async (req, res) => {
     const IS_SANDBOX = process.env.ASAAS_ENVIRONMENT === 'sandbox';
     const ASAAS_URL = IS_SANDBOX ? 'https://sandbox.asaas.com/api/v3' : 'https://api.asaas.com/v3';
 
+    // Verificação de Segurança
+    if (!ASAAS_API_KEY || !process.env.SUPABASE_URL || !process.env.SUPABASE_KEY) {
+        console.error("[CRITICAL] Variáveis de ambiente faltando!");
+        return res.status(500).json({ 
+            error: 'Configuração incompleta no servidor (Environment Variables)',
+            details: { asaas: !!ASAAS_API_KEY, supabase: !!process.env.SUPABASE_URL }
+        });
+    }
+
     const supabase = createClient(
         process.env.SUPABASE_URL,
         process.env.SUPABASE_KEY
