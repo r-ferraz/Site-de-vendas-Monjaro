@@ -1,4 +1,8 @@
 {
   "version": 2,
-  "cleanUrls": true
+  "name": "maori-saude-vendas",
+  "cleanUrls": true,
+  "rewrites": [
+    { "source": "/api/(.*)", "destination": "/api/$1" }
+  ]
 }
