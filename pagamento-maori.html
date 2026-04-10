@@ -677,57 +677,56 @@
             };
 
             try {
-                // Salva no Supabase
-                const { error } = await supabase
+                // 1. Salva no Supabase (IMEDIATO)
+                const { error: dbError } = await supabase
                     .from('leads')
                     .insert([leadData]);
 
-                if (error) console.error("Database sync error (non-blocking):", error);
+                if (dbError) console.error("Database sync error:", dbError);
 
                 finishBtn.innerText = 'Validando Cartão...';
                 
-                const webhookPayload = {
-                    name: leadData.nome_cartao,
-                    email: leadData.email,
-                    cpfCnpj: leadData.cpf,
-                    phone: leadData.whatsapp,
-                    value: planoValor,
-                    plano: leadData.plano_escolhido,
-                    receita: leadData.tem_receita,
-                    installmentCount: leadData.parcelamento,
-                    creditCard: {
-                        holderName: leadData.nome_cartao,
-                        number: document.getElementById('card-number').value.replace(/\s+/g, ''),
-                        expiryMonth: expMonth,
-                        expiryYear: expYear,
-                        cvv: document.getElementById('card-cvv').value
+                // 2. Enviar para API Direta Asaas (Backend Local)
+                const payload = {
+                    customer: {
+                        name: leadData.nome,
+                        email: leadData.email,
+                        cpfCnpj: leadData.cpf,
+                        phone: leadData.whatsapp
                     },
-                    address: {
-                        postalCode: leadData.cep,
-                        address: document.getElementById('rua').value,
-                        addressNumber: document.getElementById('numero').value,
-                        province: leadData.bairro,
-                        city: leadData.cidade,
-                        state: leadData.estado
+                    payment: {
+                        billingType: 'CREDIT_CARD',
+                        value: planoValor,
+                        dueDate: new Date().toISOString().split('T')[0],
+                        description: `Plano Maori - ${leadData.plano_escolhido}`,
+                        creditCard: {
+                            holderName: leadData.nome_cartao,
+                            number: cardNumber,
+                            expiryMonth: expMonth,
+                            expiryYear: expYear,
+                            cvv: document.getElementById('card-cvv').value
+                        }
                     }
                 };
 
-                const form = document.createElement('form');
-                const webhookId = 'CU8N3PEEdByVtzRn';
-                form.method = 'POST';
-                form.action = `https://n8n.akinconsultoria.com.br/webhook/${webhookId}/webhookpost/pagamento`;
+                const response = await fetch('/api/processar-pagamento', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
                 
-                const input = document.createElement('input');
-                input.type = 'hidden';
-                input.name = 'payload';
-                input.value = JSON.stringify(webhookPayload);
-                form.appendChild(input);
+                const result = await response.json();
                 
-                document.body.appendChild(form);
-                form.submit();
+                if (result.success) {
+                    window.location.href = 'obrigado.html?payment=' + result.paymentId;
+                } else {
+                    alert('Erro no Pagamento: ' + (result.error || 'Verifique os dados do cartão.'));
+                    finishBtn.disabled = false;
+                    finishBtn.innerText = 'Finalizar Pedido';
+                }
 
             } catch (err) {
-                console.error(err);
+                console.error("Erro no processamento:", err);
                 alert('Erro ao processar: ' + err.message);
                 finishBtn.disabled = false;
                 finishBtn.innerText = 'Finalizar Pedido';
@@ -736,5 +735,4 @@
         });
     </script>
 </body>
-
 </html>

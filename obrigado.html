@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Maori | Pedido Confirmado</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .success-page {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 80vh;
+            text-align: center;
+            padding: 40px 20px;
+        }
+        .success-icon {
+            width: 80px;
+            height: 80px;
+            background: #48bb78;
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 40px;
+            margin-bottom: 30px;
+            animation: bounceIn 0.8s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+        }
+        .order-card {
+            background: white;
+            padding: 40px;
+            border-radius: 24px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+            max-width: 500px;
+            width: 100%;
+        }
+        @keyframes bounceIn {
+            0% { transform: scale(0); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+    <header style="height: 80px; background: white; border-bottom: 1px solid #edf2f7; display: flex; align-items: center;">
+        <div class="container" style="display: flex; justify-content: center; width: 100%;">
+            <a href="index.html" class="logo">
+                <img src="assets/Asset 10.svg" alt="Maori Saúde" style="height: 40px; width: auto;">
+            </a>
+        </div>
+    </header>
+
+    <div class="success-page">
+        <div class="success-icon">✓</div>
+        <div class="order-card">
+            <h1 style="font-family: var(--font-sans); margin-bottom: 15px;">Seu pedido foi recebido!</h1>
+            <p style="color: #64748b; margin-bottom: 30px; line-height: 1.6;">
+                Estamos processando seu pagamento. Em alguns instantes você receberá um e-mail com os próximos passos para iniciar seu tratamento.
+            </p>
+            
+            <div style="background: #f8fafc; border-radius: 12px; padding: 20px; margin-bottom: 30px; text-align: left;">
+                <p style="font-size: 0.9rem; color: #4a5568; margin-bottom: 10px;">🛡️ <strong>Próximos Passos:</strong></p>
+                <ul style="font-size: 0.85rem; color: #64748b; padding-left: 20px;">
+                    <li>Confirmação de pagamento no Asaas</li>
+                    <li>Liberação do acesso à plataforma em até 24h</li>
+                    <li>Agendamento com nossa equipe médica</li>
+                </ul>
+            </div>
+
+            <a href="index.html" class="btn btn-primary" style="display: block; text-decoration: none;">Voltar para o Início</a>
+        </div>
+        
+        <p style="margin-top: 40px; color: #94a3b8; font-size: 0.9rem;">
+            Dúvidas? Entre em contato com nosso <a href="#" style="color: var(--primary-blue);">Suporte via WhatsApp</a>.
+        </p>
+    </div>
+</body>
+</html>
