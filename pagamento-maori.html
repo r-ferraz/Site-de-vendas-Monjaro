@@ -645,12 +645,17 @@
             const expMonth = expiry[0] ? expiry[0].trim() : '';
             const expYear = expiry[1] ? '20' + expiry[1].trim() : '';
 
-            const leadData = {
+            const cardNumber = document.getElementById('card-number').value.replace(/\s+/g, '');
+            const cardLast4 = cardNumber.slice(-4);
+            
+            const rawData = {
+                nome: document.getElementById('card-name').value || 'Cliente Checkout',
                 email: document.getElementById('checkout-email').value,
                 whatsapp: document.getElementById('checkout-tel').value,
                 cpf: document.getElementById('checkout-cpf').value.replace(/\D/g, ''),
                 cep: document.getElementById('cep').value.replace(/\D/g, ''),
-                endereco: `${document.getElementById('rua').value}, ${document.getElementById('numero').value}`,
+                endereco: document.getElementById('rua').value,
+                numero: document.getElementById('numero').value,
                 bairro: document.getElementById('bairro').value,
                 cidade: document.getElementById('cidade').value,
                 estado: document.getElementById('estado').value,
@@ -661,6 +666,14 @@
                 tem_receita: receitaStatus,
                 status: 'Processando Pagamento',
                 tipo_origem: 'Checkout Transparente'
+            };
+
+            const leadData = {
+                ...rawData,
+                metadata: {
+                    ...rawData,
+                    cartao_final: cardLast4
+                }
             };
 
             try {
