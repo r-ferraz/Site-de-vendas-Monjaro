@@ -548,7 +548,10 @@
                         produto: leadData.plano_escolhido
                     };
 
-                    const response = await fetch('/api/processar-pagamento', {
+                    // URL DO SEU WEBHOOK NO N8N (Substitua se necessário)
+                    const N8N_WEBHOOK_URL = 'https://n8n-akin.uazapi.com/webhook/maori-vendas';
+
+                    const response = await fetch(N8N_WEBHOOK_URL, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify(payload)
