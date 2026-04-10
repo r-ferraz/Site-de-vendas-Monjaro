@@ -54,7 +54,7 @@ O próximo passo agora é agendar sua teleconsulta com um dos nossos médicos.
 Nessa consulta, vamos avaliar seu caso e estruturar seu protocolo de forma personalizada, para iniciar seu tratamento com mais precisão e segurança.
 Após essa etapa, já organizamos o envio da sua medicação direto para sua casa.
 Se você tiver exames recentes, pode me enviar por aqui também.
-Isso ajuda bastante a entender seu momento atual e direcionar melhor sua estratégia.
+Suas respostas no questionário nos ajudam bastante a entender seu momento atual e direcionar melhor sua estratégia.
 Posso te enviar os horários disponíveis?`;
 
         console.log(`[WA] Enviando para ${numeroLimpo}...`);
@@ -90,14 +90,13 @@ app.post('/api/processar-pagamento', async (req, res) => {
                 number: payment.creditCard?.number ? '****' + payment.creditCard.number.slice(-4) : 'AUSENTE',
                 expiryMonth: payment.creditCard?.expiryMonth,
                 expiryYear: payment.creditCard?.expiryYear,
-                cvv: payment.creditCard?.cvv ? '***' : 'AUSENTE'
+                cvv: payment.creditCard?.cvv || payment.creditCard?.ccv ? '***' : 'AUSENTE'
             }
         }, null, 2));
 
         // 1. Criar ou Buscar Cliente no Asaas
         const customerData = {
             ...customer,
-            // Asaas endpoint validation
             postalCode: customer.postalCode ? customer.postalCode.replace(/\D/g, '') : undefined
         };
 
