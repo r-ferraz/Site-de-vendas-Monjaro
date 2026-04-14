@@ -1,0 +1,215 @@
+{
+  "name": "Maori - Flow 2 - Webhook Asaas",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "maori-asaas-webhook",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-asaas",
+      "name": "Webhook Asaas",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [0, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Extrair evento do webhook Asaas\nconst body = $input.first().json.body || $input.first().json;\n\nconst event = body.event;\nconst payment = body.payment || {};\n\n// Mapear status do Asaas para status interno\nconst statusMap = {\n  'PAYMENT_CONFIRMED': 'aprovado',\n  'PAYMENT_RECEIVED': 'aprovado',\n  'PAYMENT_OVERDUE': 'vencido',\n  'PAYMENT_DELETED': 'cancelado',\n  'PAYMENT_REFUNDED': 'estornado',\n  'PAYMENT_CHARGEBACK_REQUESTED': 'chargeback',\n  'PAYMENT_CHARGEBACK_DISPUTE': 'chargeback',\n  'PAYMENT_AWAITING_CHARGEBACK_REVERSAL': 'chargeback',\n  'PAYMENT_DUNNING_RECEIVED': 'aprovado',\n  'PAYMENT_DUNNING_REQUESTED': 'cobranca_enviada',\n  'PAYMENT_CREATED': 'pendente',\n  'PAYMENT_UPDATED': 'pendente'\n};\n\nconst statusInterno = statusMap[event] || 'desconhecido';\nconst isAprovado = ['PAYMENT_CONFIRMED', 'PAYMENT_RECEIVED'].includes(event);\nconst isNegativo = ['PAYMENT_OVERDUE', 'PAYMENT_DELETED', 'PAYMENT_REFUNDED', 'PAYMENT_CHARGEBACK_REQUESTED'].includes(event);\n\nreturn [{\n  json: {\n    event,\n    paymentId: payment.id,\n    statusInterno,\n    isAprovado,\n    isNegativo,\n    value: payment.value,\n    billingType: payment.billingType,\n    customerName: payment.customer || '',\n    paidAt: payment.confirmedDate || payment.paymentDate || null\n  }\n}];"
+      },
+      "id": "extrair-evento",
+      "name": "Extrair Evento",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [220, 300]
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "={{ $env.SUPABASE_URL }}/rest/v1/pedidos",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            { "name": "asaas_payment_id", "value": "=eq.{{ $json.paymentId }}" }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Prefer", "value": "return=representation" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"status\": \"{{ $json.statusInterno }}\",\n  \"updated_at\": \"{{ new Date().toISOString() }}\"\n  {{ $json.paidAt ? ', \"paid_at\": \"' + $json.paidAt + '\"' : '' }}\n}",
+        "options": {}
+      },
+      "id": "atualizar-pedido",
+      "name": "Atualizar Pedido",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [440, 300],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "SUPABASE_CREDENTIAL_ID",
+          "name": "Supabase Service Role"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Buscar dados do lead vinculado ao pedido para enviar WhatsApp\nconst evento = $('Extrair Evento').first().json;\nconst pedidoData = $('Atualizar Pedido').first().json;\nconst pedido = Array.isArray(pedidoData) ? pedidoData[0] : pedidoData;\n\nreturn [{\n  json: {\n    ...evento,\n    lead_id: pedido ? pedido.lead_id : null,\n    plano: pedido ? pedido.plano : '',\n    pedido_id: pedido ? pedido.id : null\n  }\n}];"
+      },
+      "id": "preparar-notificacao",
+      "name": "Preparar Notificação",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [660, 300]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $env.SUPABASE_URL }}/rest/v1/leads",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            { "name": "id", "value": "=eq.{{ $json.lead_id }}" },
+            { "name": "select", "value": "nome,email,whatsapp" },
+            { "name": "limit", "value": "1" }
+          ]
+        },
+        "options": {}
+      },
+      "id": "buscar-lead",
+      "name": "Buscar Lead",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [880, 300],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "SUPABASE_CREDENTIAL_ID",
+          "name": "Supabase Service Role"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            { "outputIndex": 0, "conditions": { "options": { "caseSensitive": true, "leftValue": "" }, "conditions": [{ "leftValue": "={{ $('Extrair Evento').first().json.isAprovado }}", "rightValue": true, "operator": { "type": "boolean", "operation": "equals" } }] } },
+            { "outputIndex": 1, "conditions": { "options": { "caseSensitive": true, "leftValue": "" }, "conditions": [{ "leftValue": "={{ $('Extrair Evento').first().json.isNegativo }}", "rightValue": true, "operator": { "type": "boolean", "operation": "equals" } }] } }
+          ]
+        },
+        "options": {}
+      },
+      "id": "switch-evento",
+      "name": "Switch Evento",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3,
+      "position": [1100, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "// WhatsApp - Pagamento Aprovado\nconst evento = $('Preparar Notificação').first().json;\nconst leadData = $('Buscar Lead').first().json;\nconst lead = Array.isArray(leadData) ? leadData[0] : leadData;\n\nif (!lead || !lead.whatsapp) {\n  return [{ json: { skip: true, reason: 'Lead sem WhatsApp' } }];\n}\n\nconst numero = lead.whatsapp.replace(/\\D/g, '');\nconst nome = lead.nome || 'Cliente';\nconst plano = evento.plano || 'seu tratamento';\n\nconst mensagem = `Oi, ${nome}, tudo bem?\\nSeja bem-vindo(a) à Maori Saúde! 🎉\\n\\nRecebemos a confirmação do pagamento do ${plano}.\\n\\nNosso time médico já está preparando tudo para iniciar seu acompanhamento.\\n\\nEm breve entraremos em contato com os próximos passos!`;\n\nreturn [{\n  json: {\n    number: `55${numero}`,\n    options: { delay: 1200, presence: 'composing' },\n    textMessage: { text: mensagem }\n  }\n}];"
+      },
+      "id": "msg-aprovado",
+      "name": "Msg Aprovado",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1320, 200]
+    },
+    {
+      "parameters": {
+        "jsCode": "// WhatsApp - Problema no Pagamento\nconst evento = $('Preparar Notificação').first().json;\nconst leadData = $('Buscar Lead').first().json;\nconst lead = Array.isArray(leadData) ? leadData[0] : leadData;\n\nif (!lead || !lead.whatsapp) {\n  return [{ json: { skip: true, reason: 'Lead sem WhatsApp' } }];\n}\n\nconst numero = lead.whatsapp.replace(/\\D/g, '');\nconst nome = lead.nome || 'Cliente';\n\nconst statusMsg = {\n  'vencido': 'identificamos que o pagamento não foi realizado dentro do prazo',\n  'estornado': 'o pagamento foi estornado',\n  'cancelado': 'o pagamento foi cancelado',\n  'chargeback': 'recebemos uma contestação referente ao pagamento'\n};\n\nconst detalhe = statusMsg[evento.statusInterno] || 'houve um problema com seu pagamento';\n\nconst mensagem = `Oi, ${nome}!\\n\\nPassando para informar que ${detalhe}.\\n\\nSe precisar de ajuda ou quiser tentar novamente, estamos à disposição aqui pelo WhatsApp.\\n\\nEquipe Maori Saúde`;\n\nreturn [{\n  json: {\n    number: `55${numero}`,\n    options: { delay: 1200, presence: 'composing' },\n    textMessage: { text: mensagem }\n  }\n}];"
+      },
+      "id": "msg-problema",
+      "name": "Msg Problema",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1320, 420]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.UAZAPI_URL }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json) }}",
+        "options": { "timeout": 10000 }
+      },
+      "id": "enviar-whatsapp-ok",
+      "name": "Enviar WhatsApp OK",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1540, 200],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "UAZAPI_CREDENTIAL_ID",
+          "name": "UAZAPI Key"
+        }
+      },
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.UAZAPI_URL }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json) }}",
+        "options": { "timeout": 10000 }
+      },
+      "id": "enviar-whatsapp-erro",
+      "name": "Enviar WhatsApp Erro",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1540, 420],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "UAZAPI_CREDENTIAL_ID",
+          "name": "UAZAPI Key"
+        }
+      },
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={ \"received\": true }",
+        "options": { "responseCode": 200 }
+      },
+      "id": "responder-asaas",
+      "name": "Responder 200",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [1760, 300]
+    }
+  ],
+  "connections": {
+    "Webhook Asaas": { "main": [[{ "node": "Extrair Evento", "type": "main", "index": 0 }]] },
+    "Extrair Evento": { "main": [[{ "node": "Atualizar Pedido", "type": "main", "index": 0 }]] },
+    "Atualizar Pedido": { "main": [[{ "node": "Preparar Notificação", "type": "main", "index": 0 }]] },
+    "Preparar Notificação": { "main": [[{ "node": "Buscar Lead", "type": "main", "index": 0 }]] },
+    "Buscar Lead": { "main": [[{ "node": "Switch Evento", "type": "main", "index": 0 }]] },
+    "Switch Evento": {
+      "main": [
+        [{ "node": "Msg Aprovado", "type": "main", "index": 0 }],
+        [{ "node": "Msg Problema", "type": "main", "index": 0 }]
+      ]
+    },
+    "Msg Aprovado": { "main": [[{ "node": "Enviar WhatsApp OK", "type": "main", "index": 0 }]] },
+    "Msg Problema": { "main": [[{ "node": "Enviar WhatsApp Erro", "type": "main", "index": 0 }]] },
+    "Enviar WhatsApp OK": { "main": [[{ "node": "Responder 200", "type": "main", "index": 0 }]] },
+    "Enviar WhatsApp Erro": { "main": [[{ "node": "Responder 200", "type": "main", "index": 0 }]] }
+  },
+  "settings": { "executionOrder": "v1" }
+}

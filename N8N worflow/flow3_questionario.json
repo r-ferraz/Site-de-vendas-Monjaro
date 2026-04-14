@@ -1,0 +1,107 @@
+{
+  "name": "Maori - Flow 3 - Questionário",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "novo-questionario",
+        "responseMode": "lastNode",
+        "options": {
+          "allowedOrigins": "*"
+        }
+      },
+      "id": "webhook-questionario",
+      "name": "Webhook Questionário",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [0, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Extrair dados do questionário\nconst input = $input.first().json;\nconst data = input.body || input;\n\nreturn [{ json: data }];"
+      },
+      "id": "extrair-questionario",
+      "name": "Extrair Dados",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [220, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Decidir se faz INSERT ou UPDATE\nconst data = $input.first().json;\nconst leadId = data.lead_id;\n\n// Se já tem lead_id, pode ser que o lead já exista (veio da receita antes)\n// Nesse caso faremos upsert/update. Senão, insert novo.\nreturn [{\n  json: {\n    ...data,\n    hasExistingLead: !!(leadId && leadId.length > 10)\n  }\n}];"
+      },
+      "id": "verificar-lead",
+      "name": "Verificar Lead",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [440, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.SUPABASE_URL }}/rest/v1/leads",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Prefer", "value": "return=representation" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"nome\": \"{{ $json.nome }}\",\n  \"email\": \"{{ $json.email }}\",\n  \"whatsapp\": \"{{ $json.whatsapp }}\",\n  \"tipo_origem\": \"Questionário\",\n  \"status\": \"Novo\",\n  \"respostas_triagem\": {{ JSON.stringify($json.respostas_triagem || {}) }},\n  \"utm_source\": \"{{ $json.utm_source || '' }}\",\n  \"utm_medium\": \"{{ $json.utm_medium || '' }}\",\n  \"utm_campaign\": \"{{ $json.utm_campaign || '' }}\"\n}",
+        "options": {}
+      },
+      "id": "salvar-lead-questionario",
+      "name": "Salvar Lead",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [660, 300],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "SUPABASE_CREDENTIAL_ID",
+          "name": "Supabase Service Role"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://n8n.akinconsultoria.com.br/webhook/email-clinica",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"tipo\": \"Novo Questionário\",\n  \"nome\": \"{{ $('Extrair Dados').first().json.nome }}\",\n  \"email\": \"{{ $('Extrair Dados').first().json.email }}\",\n  \"whatsapp\": \"{{ $('Extrair Dados').first().json.whatsapp }}\",\n  \"respostas_html\": \"{{ $('Extrair Dados').first().json.respostas_html || '' }}\"\n}",
+        "options": { "timeout": 5000 }
+      },
+      "id": "email-clinica-questionario",
+      "name": "Email Clínica",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [880, 400],
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "jsCode": "// Retornar lead_id para o frontend\nconst leadData = $('Salvar Lead').first().json;\nconst lead = Array.isArray(leadData) ? leadData[0] : leadData;\n\nreturn [{\n  json: {\n    success: true,\n    lead_id: lead ? lead.id : '',\n    message: 'Questionário salvo com sucesso'\n  }\n}];"
+      },
+      "id": "responder-questionario",
+      "name": "Responder",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1100, 300]
+    }
+  ],
+  "connections": {
+    "Webhook Questionário": { "main": [[{ "node": "Extrair Dados", "type": "main", "index": 0 }]] },
+    "Extrair Dados": { "main": [[{ "node": "Verificar Lead", "type": "main", "index": 0 }]] },
+    "Verificar Lead": { "main": [[{ "node": "Salvar Lead", "type": "main", "index": 0 }]] },
+    "Salvar Lead": {
+      "main": [[
+        { "node": "Email Clínica", "type": "main", "index": 0 },
+        { "node": "Responder", "type": "main", "index": 0 }
+      ]]
+    }
+  },
+  "settings": { "executionOrder": "v1" }
+}

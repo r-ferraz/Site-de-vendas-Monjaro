@@ -1,0 +1,143 @@
+{
+  "name": "Maori - Flow 4 - Receita",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "nova-receita",
+        "responseMode": "lastNode",
+        "options": {
+          "allowedOrigins": "*"
+        }
+      },
+      "id": "webhook-receita",
+      "name": "Webhook Receita",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [0, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Extrair dados da receita\nconst input = $input.first().json;\nconst data = input.body || input;\n\nreturn [{ json: data }];"
+      },
+      "id": "extrair-receita",
+      "name": "Extrair Dados",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [220, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Salvar arquivo no Supabase Storage via API\nconst data = $input.first().json;\n\n// Se o arquivo veio como base64, preparar para upload\nconst hasFile = data.arquivo_base64 && data.arquivo_base64.length > 100;\n\nreturn [{\n  json: {\n    ...data,\n    hasFile,\n    arquivo_url: data.arquivo_url || ''\n  }\n}];"
+      },
+      "id": "preparar-arquivo",
+      "name": "Preparar Arquivo",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [440, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.SUPABASE_URL }}/rest/v1/leads",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Prefer", "value": "return=representation" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"nome\": \"{{ $json.nome }}\",\n  \"email\": \"{{ $json.email }}\",\n  \"whatsapp\": \"{{ $json.whatsapp }}\",\n  \"arquivo_url\": \"{{ $json.arquivo_url || '' }}\",\n  \"tipo_origem\": \"Receita\",\n  \"status\": \"Novo\",\n  \"tem_receita\": \"sim\",\n  \"utm_source\": \"{{ $json.utm_source || '' }}\",\n  \"utm_medium\": \"{{ $json.utm_medium || '' }}\",\n  \"utm_campaign\": \"{{ $json.utm_campaign || '' }}\"\n}",
+        "options": {}
+      },
+      "id": "salvar-lead-receita",
+      "name": "Salvar Lead",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [660, 300],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "SUPABASE_CREDENTIAL_ID",
+          "name": "Supabase Service Role"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Salvar transcrição se disponível\nconst data = $('Extrair Dados').first().json;\nconst leadData = $('Salvar Lead').first().json;\nconst lead = Array.isArray(leadData) ? leadData[0] : leadData;\n\nreturn [{\n  json: {\n    lead_id: lead ? lead.id : '',\n    nome: data.nome,\n    email: data.email,\n    whatsapp: data.whatsapp,\n    arquivo_url: data.arquivo_url || '',\n    transcricao: data.transcricao || '',\n    hasTranscription: !!(data.transcricao && data.transcricao.length > 10)\n  }\n}];"
+      },
+      "id": "preparar-transcricao",
+      "name": "Preparar Transcrição",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [880, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.SUPABASE_URL }}/rest/v1/transcription_results",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"lead_id\": \"{{ $json.lead_id }}\",\n  \"full_text\": \"{{ $json.transcricao }}\",\n  \"status\": \"processed\"\n}",
+        "options": {}
+      },
+      "id": "salvar-transcricao",
+      "name": "Salvar Transcrição",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1100, 400],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "SUPABASE_CREDENTIAL_ID",
+          "name": "Supabase Service Role"
+        }
+      },
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://n8n.akinconsultoria.com.br/webhook/email-clinica",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"tipo\": \"Nova Receita Enviada\",\n  \"nome\": \"{{ $json.nome }}\",\n  \"email\": \"{{ $json.email }}\",\n  \"whatsapp\": \"{{ $json.whatsapp }}\",\n  \"arquivo_url\": \"{{ $json.arquivo_url }}\",\n  \"transcricao\": \"{{ $json.transcricao || 'Sem transcrição automática' }}\"\n}",
+        "options": { "timeout": 5000 }
+      },
+      "id": "email-clinica-receita",
+      "name": "Email Clínica",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1100, 200],
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "jsCode": "// Retornar lead_id para o frontend\nconst data = $('Preparar Transcrição').first().json;\n\nreturn [{\n  json: {\n    success: true,\n    lead_id: data.lead_id,\n    message: 'Receita recebida com sucesso'\n  }\n}];"
+      },
+      "id": "responder-receita",
+      "name": "Responder",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1320, 300]
+    }
+  ],
+  "connections": {
+    "Webhook Receita": { "main": [[{ "node": "Extrair Dados", "type": "main", "index": 0 }]] },
+    "Extrair Dados": { "main": [[{ "node": "Preparar Arquivo", "type": "main", "index": 0 }]] },
+    "Preparar Arquivo": { "main": [[{ "node": "Salvar Lead", "type": "main", "index": 0 }]] },
+    "Salvar Lead": { "main": [[{ "node": "Preparar Transcrição", "type": "main", "index": 0 }]] },
+    "Preparar Transcrição": {
+      "main": [[
+        { "node": "Email Clínica", "type": "main", "index": 0 },
+        { "node": "Salvar Transcrição", "type": "main", "index": 0 },
+        { "node": "Responder", "type": "main", "index": 0 }
+      ]]
+    }
+  },
+  "settings": { "executionOrder": "v1" }
+}

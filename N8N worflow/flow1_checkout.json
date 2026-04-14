@@ -1,0 +1,280 @@
+{
+  "name": "Maori - Flow 1 - Checkout Vendas",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "maori-vendas",
+        "responseMode": "lastNode",
+        "options": {
+          "allowedOrigins": "*"
+        }
+      },
+      "id": "webhook-checkout",
+      "name": "Webhook Checkout",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [0, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Extrair dados do payload (suporta JSON direto ou url-encoded)\nconst input = $input.first().json;\nlet data;\n\nif (input.body && input.body.payload) {\n  data = typeof input.body.payload === 'string' ? JSON.parse(input.body.payload) : input.body.payload;\n} else if (input.payload) {\n  data = typeof input.payload === 'string' ? JSON.parse(input.payload) : input.payload;\n} else {\n  data = input;\n}\n\nreturn [{ json: data }];"
+      },
+      "id": "extrair-dados",
+      "name": "Extrair Dados",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [220, 300]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $env.SUPABASE_URL }}/rest/v1/parceiros",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            { "name": "utm_source", "value": "=eq.{{ $json.utm_source }}" },
+            { "name": "ativo", "value": "=eq.true" },
+            { "name": "select", "value": "*" },
+            { "name": "limit", "value": "1" }
+          ]
+        },
+        "options": {}
+      },
+      "id": "lookup-parceiro",
+      "name": "Lookup Parceiro",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [440, 300],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "SUPABASE_CREDENTIAL_ID",
+          "name": "Supabase Service Role"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $env.SUPABASE_URL }}/rest/v1/split_config",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            { "name": "ativo", "value": "=eq.true" },
+            { "name": "select", "value": "*" }
+          ]
+        },
+        "options": {}
+      },
+      "id": "buscar-split-config",
+      "name": "Buscar Split Config",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [660, 300],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "SUPABASE_CREDENTIAL_ID",
+          "name": "Supabase Service Role"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Recuperar dados das etapas anteriores\nconst payload = $('Extrair Dados').first().json;\nconst parceiroResult = $('Lookup Parceiro').first().json;\nconst splitConfigs = $('Buscar Split Config').first().json;\n\n// Valor bruto da venda\nconst valorBruto = payload.payment.value;\n\n// Montar array de splits com fixedValue (calculado sobre o bruto)\nconst splits = [];\nconst splitDetails = []; // para salvar no pedido_splits depois\n\n// Verificar se parceiroResult é array ou objeto\nconst parceiro = Array.isArray(parceiroResult) ? parceiroResult[0] : parceiroResult;\nconst configs = Array.isArray(splitConfigs) ? splitConfigs : [splitConfigs];\n\n// Splits fixos (sistemas, admin1, admin2)\nfor (const config of configs) {\n  if (!config || !config.tipo || config.tipo === 'parceiro') continue;\n  \n  const valor = Math.round((valorBruto * config.percentual / 100) * 100) / 100;\n  splits.push({\n    walletId: config.wallet_id,\n    fixedValue: valor\n  });\n  splitDetails.push({\n    split_config_id: config.id,\n    tipo: config.tipo,\n    wallet_id: config.wallet_id,\n    percentual_aplicado: config.percentual,\n    valor_calculado: valor\n  });\n}\n\n// Split do parceiro (se existe e tem utm_source)\nlet parceiroId = null;\nif (parceiro && parceiro.wallet_id && payload.utm_source) {\n  const comissao = parceiro.comissao_percent || 5;\n  const valor = Math.round((valorBruto * comissao / 100) * 100) / 100;\n  splits.push({\n    walletId: parceiro.wallet_id,\n    fixedValue: valor\n  });\n  splitDetails.push({\n    split_config_id: null,\n    tipo: 'parceiro',\n    wallet_id: parceiro.wallet_id,\n    percentual_aplicado: comissao,\n    valor_calculado: valor\n  });\n  parceiroId = parceiro.id;\n}\n\nreturn [{\n  json: {\n    payload,\n    splits,\n    splitDetails,\n    parceiroId,\n    valorBruto\n  }\n}];"
+      },
+      "id": "calcular-splits",
+      "name": "Calcular Splits",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [880, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.SUPABASE_URL }}/rest/v1/leads",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Prefer", "value": "return=representation" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"nome\": \"{{ $json.payload.customer.name }}\",\n  \"email\": \"{{ $json.payload.customer.email }}\",\n  \"whatsapp\": \"{{ $json.payload.whatsapp }}\",\n  \"cpf\": \"{{ $json.payload.customer.cpfCnpj }}\",\n  \"cep\": \"{{ $json.payload.customer.postalCode }}\",\n  \"endereco\": \"{{ $json.payload.customer.address }}\",\n  \"bairro\": \"{{ $json.payload.customer.province }}\",\n  \"numero\": \"{{ $json.payload.customer.addressNumber }}\",\n  \"plano_escolhido\": \"{{ $json.payload.produto }}\",\n  \"tem_receita\": \"{{ $json.payload.temReceita }}\",\n  \"tipo_origem\": \"Checkout Transparente\",\n  \"status\": \"Processando\",\n  \"utm_source\": \"{{ $json.payload.utm_source }}\",\n  \"utm_medium\": \"{{ $json.payload.utm_medium }}\",\n  \"utm_campaign\": \"{{ $json.payload.utm_campaign }}\"\n}",
+        "options": {}
+      },
+      "id": "salvar-lead",
+      "name": "Salvar Lead",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1100, 300],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "SUPABASE_CREDENTIAL_ID",
+          "name": "Supabase Service Role"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.ASAAS_URL }}/customers",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"name\": \"{{ $('Calcular Splits').first().json.payload.customer.name }}\",\n  \"email\": \"{{ $('Calcular Splits').first().json.payload.customer.email }}\",\n  \"cpfCnpj\": \"{{ $('Calcular Splits').first().json.payload.customer.cpfCnpj }}\",\n  \"phone\": \"{{ $('Calcular Splits').first().json.payload.customer.phone }}\",\n  \"address\": \"{{ $('Calcular Splits').first().json.payload.customer.address }}\",\n  \"addressNumber\": \"{{ $('Calcular Splits').first().json.payload.customer.addressNumber }}\",\n  \"province\": \"{{ $('Calcular Splits').first().json.payload.customer.province }}\",\n  \"postalCode\": \"{{ $('Calcular Splits').first().json.payload.customer.postalCode }}\"\n}",
+        "options": {}
+      },
+      "id": "asaas-criar-cliente",
+      "name": "Asaas Criar Cliente",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1320, 300],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "ASAAS_CREDENTIAL_ID",
+          "name": "Asaas API Key"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Montar o body da cobrança com splits\nconst calcData = $('Calcular Splits').first().json;\nconst asaasCustomerId = $('Asaas Criar Cliente').first().json.id;\nconst payload = calcData.payload;\nconst splits = calcData.splits;\n\nconst paymentBody = {\n  customer: asaasCustomerId,\n  billingType: payload.payment.billingType || payload.billingType || 'CREDIT_CARD',\n  value: payload.payment.value,\n  dueDate: payload.payment.dueDate,\n  description: payload.payment.description\n};\n\n// Adicionar dados de cartão se for CREDIT_CARD\nif (paymentBody.billingType === 'CREDIT_CARD' && payload.payment.creditCard) {\n  paymentBody.creditCard = payload.payment.creditCard;\n  paymentBody.creditCardHolderInfo = {\n    name: payload.customer.name,\n    email: payload.customer.email,\n    cpfCnpj: payload.customer.cpfCnpj,\n    phone: payload.customer.phone,\n    postalCode: payload.customer.postalCode,\n    address: payload.customer.address,\n    addressNumber: payload.customer.addressNumber,\n    province: payload.customer.province\n  };\n  if (payload.payment.installmentCount > 1) {\n    paymentBody.installmentCount = payload.payment.installmentCount;\n    paymentBody.installmentValue = Math.round((payload.payment.value / payload.payment.installmentCount) * 100) / 100;\n  }\n}\n\n// Adicionar splits (se existirem)\nif (splits && splits.length > 0) {\n  paymentBody.split = splits;\n}\n\nreturn [{ json: paymentBody }];"
+      },
+      "id": "montar-cobranca",
+      "name": "Montar Cobrança",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1540, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.ASAAS_URL }}/payments",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json) }}",
+        "options": {}
+      },
+      "id": "asaas-cobrar",
+      "name": "Asaas Cobrar",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1760, 300],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "ASAAS_CREDENTIAL_ID",
+          "name": "Asaas API Key"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Salvar pedido e splits no Supabase\nconst asaasPayment = $('Asaas Cobrar').first().json;\nconst asaasCustomer = $('Asaas Criar Cliente').first().json;\nconst calcData = $('Calcular Splits').first().json;\nconst leadData = $('Salvar Lead').first().json;\nconst lead = Array.isArray(leadData) ? leadData[0] : leadData;\n\n// Verificar se pagamento foi bem-sucedido\nconst isSuccess = asaasPayment.id && !asaasPayment.errors;\n\nif (!isSuccess) {\n  return [{\n    json: {\n      success: false,\n      error: asaasPayment.errors ? asaasPayment.errors[0].description : 'Erro ao processar pagamento'\n    }\n  }];\n}\n\n// Dados para Pix (se aplicável)\nlet pixData = {};\nif (asaasPayment.billingType === 'PIX') {\n  pixData = {\n    pixQrCode: asaasPayment.encodedImage || '',\n    pixCopyPaste: asaasPayment.payload || ''\n  };\n}\n\nreturn [{\n  json: {\n    success: true,\n    paymentId: asaasPayment.id,\n    paymentStatus: asaasPayment.status,\n    ...pixData,\n    // Dados para salvar no Supabase (próximo nó)\n    _pedido: {\n      lead_id: lead.id || calcData.payload.lead_id,\n      parceiro_id: calcData.parceiroId,\n      asaas_customer_id: asaasCustomer.id,\n      asaas_payment_id: asaasPayment.id,\n      billing_type: asaasPayment.billingType,\n      valor_bruto: calcData.valorBruto,\n      plano: calcData.payload.produto,\n      parcelas: calcData.payload.payment.installmentCount || 1,\n      status: asaasPayment.status === 'CONFIRMED' ? 'aprovado' : 'pendente'\n    },\n    _splitDetails: calcData.splitDetails\n  }\n}];"
+      },
+      "id": "processar-resultado",
+      "name": "Processar Resultado",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1980, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.SUPABASE_URL }}/rest/v1/pedidos",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Prefer", "value": "return=representation" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json._pedido) }}",
+        "options": {}
+      },
+      "id": "salvar-pedido",
+      "name": "Salvar Pedido",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [2200, 300],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "SUPABASE_CREDENTIAL_ID",
+          "name": "Supabase Service Role"
+        }
+      },
+      "executeOnce": false
+    },
+    {
+      "parameters": {
+        "jsCode": "// Salvar cada split individualmente\nconst resultado = $('Processar Resultado').first().json;\nconst pedidoData = $('Salvar Pedido').first().json;\nconst pedido = Array.isArray(pedidoData) ? pedidoData[0] : pedidoData;\nconst splitDetails = resultado._splitDetails || [];\n\nif (!pedido || !pedido.id || splitDetails.length === 0) {\n  return [{ json: resultado }];\n}\n\n// Preparar inserts de pedido_splits\nconst inserts = splitDetails.map(s => ({\n  pedido_id: pedido.id,\n  split_config_id: s.split_config_id,\n  tipo: s.tipo,\n  wallet_id: s.wallet_id,\n  percentual_aplicado: s.percentual_aplicado,\n  valor_calculado: s.valor_calculado,\n  status: 'pendente'\n}));\n\nreturn [{ json: { ...resultado, _splitInserts: inserts } }];"
+      },
+      "id": "preparar-splits",
+      "name": "Preparar Splits",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2420, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.SUPABASE_URL }}/rest/v1/pedido_splits",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json._splitInserts || []) }}",
+        "options": {}
+      },
+      "id": "salvar-splits",
+      "name": "Salvar Splits",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [2640, 300],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "SUPABASE_CREDENTIAL_ID",
+          "name": "Supabase Service Role"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Responder ao frontend com resultado limpo\nconst resultado = $('Processar Resultado').first().json;\n\nreturn [{\n  json: {\n    success: resultado.success,\n    paymentId: resultado.paymentId || '',\n    paymentStatus: resultado.paymentStatus || '',\n    pixQrCode: resultado.pixQrCode || '',\n    pixCopyPaste: resultado.pixCopyPaste || '',\n    error: resultado.error || ''\n  }\n}];"
+      },
+      "id": "responder-frontend",
+      "name": "Responder Frontend",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2860, 300]
+    }
+  ],
+  "connections": {
+    "Webhook Checkout": { "main": [[{ "node": "Extrair Dados", "type": "main", "index": 0 }]] },
+    "Extrair Dados": { "main": [[{ "node": "Lookup Parceiro", "type": "main", "index": 0 }]] },
+    "Lookup Parceiro": { "main": [[{ "node": "Buscar Split Config", "type": "main", "index": 0 }]] },
+    "Buscar Split Config": { "main": [[{ "node": "Calcular Splits", "type": "main", "index": 0 }]] },
+    "Calcular Splits": { "main": [[{ "node": "Salvar Lead", "type": "main", "index": 0 }]] },
+    "Salvar Lead": { "main": [[{ "node": "Asaas Criar Cliente", "type": "main", "index": 0 }]] },
+    "Asaas Criar Cliente": { "main": [[{ "node": "Montar Cobrança", "type": "main", "index": 0 }]] },
+    "Montar Cobrança": { "main": [[{ "node": "Asaas Cobrar", "type": "main", "index": 0 }]] },
+    "Asaas Cobrar": { "main": [[{ "node": "Processar Resultado", "type": "main", "index": 0 }]] },
+    "Processar Resultado": { "main": [[{ "node": "Salvar Pedido", "type": "main", "index": 0 }]] },
+    "Salvar Pedido": { "main": [[{ "node": "Preparar Splits", "type": "main", "index": 0 }]] },
+    "Preparar Splits": { "main": [[{ "node": "Salvar Splits", "type": "main", "index": 0 }]] },
+    "Salvar Splits": { "main": [[{ "node": "Responder Frontend", "type": "main", "index": 0 }]] }
+  },
+  "settings": { "executionOrder": "v1" }
+}
