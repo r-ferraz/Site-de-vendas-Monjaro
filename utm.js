@@ -2,7 +2,7 @@
     /**
      * Script Global de Captura de UTM
      * Captura parâmetros utm_source, utm_medium, utm_campaign da URL
-     * e armazena no sessionStorage para persistência durante a navegação.
+     * e armazena no localStorage para persistência.
      */
     const params = new URLSearchParams(window.location.search);
     const utms = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content', 'lead_id'];
@@ -10,36 +10,34 @@
     utms.forEach(utm => {
         const value = params.get(utm);
         if (value) {
-            // Para lead_id, sempre sobrepomos se houver um novo na URL, pois pode ser uma atualização
-            // Para UTMs, mantemos a primeira da sessão se o usuário assim preferir (comportamento original)
-            if (utm === 'lead_id') {
-                sessionStorage.setItem(utm, value);
-                console.log(`[Flow] Lead ID Capturado: ${value}`);
-            } else {
-                const existing = sessionStorage.getItem(utm);
-                if (!existing) {
-                    sessionStorage.setItem(utm, value);
-                    console.log(`[UTM] Capturado: ${utm}=${value}`);
-                }
-            }
+            // Salva no localStorage para persistência entre sessões
+            localStorage.setItem(utm, value);
+            console.log(`[UTM] Capturado e Salvo: ${utm}=${value}`);
         }
     });
 
-    // Diagnóstico
-    const currentUtms = {
-        utm_source: sessionStorage.getItem('utm_source'),
-        utm_medium: sessionStorage.getItem('utm_medium'),
-        utm_campaign: sessionStorage.getItem('utm_campaign'),
-        utm_term: sessionStorage.getItem('utm_term'),
-        utm_content: sessionStorage.getItem('utm_content'),
-        lead_id: sessionStorage.getItem('lead_id')
+    /**
+     * Helper: Retorna os parâmetros UTM salvos
+     */
+    window.getUtmParams = function() {
+        return {
+            utm_source: localStorage.getItem('utm_source') || '',
+            utm_medium: localStorage.getItem('utm_medium') || '',
+            utm_campaign: localStorage.getItem('utm_campaign') || '',
+            utm_term: localStorage.getItem('utm_term') || '',
+            utm_content: localStorage.getItem('utm_content') || '',
+            lead_id: localStorage.getItem('lead_id') || ''
+        };
     };
-    console.log('[UTM] Estado da Sessão:', currentUtms);
+
+    // Diagnóstico
+    console.log('[UTM] Estado Global:', window.getUtmParams());
 
     /**
-     * Helper: Adiciona UTMs da sessão a uma URL
+     * Helper: Adiciona UTMs salvos a uma URL
      */
     window.addUtmsToUrl = function(url) {
+        const currentUtms = window.getUtmParams();
         try {
             const urlObj = new URL(url, window.location.origin);
             // Só adiciona se for link interno (mesmo host)
@@ -89,14 +87,15 @@
         });
     }
 
-    // Executa ao carregar e após um pequeno delay para garantir que conteúdos dinâmicos (como FAB) carreguem
+    // Executa ao carregar e após um pequeno delay para garantir que conteúdos dinâmicos carreguem
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', () => {
             propagateToLinks();
-            setTimeout(propagateToLinks, 1000); // Repete para garantir botões dinâmicos
+            setTimeout(propagateToLinks, 1500);
         });
     } else {
         propagateToLinks();
-        setTimeout(propagateToLinks, 1000);
+        setTimeout(propagateToLinks, 1500);
     }
 })();
+

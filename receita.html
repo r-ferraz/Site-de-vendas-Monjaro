@@ -642,11 +642,12 @@
                     reader.readAsDataURL(fileToUpload);
                 });
 
+                const utms = window.getUtmParams ? window.getUtmParams() : {};
                 const response = await fetch('https://n8n.srv1586236.hstgr.cloud/webhook/nova-receita', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        lead_id: sessionStorage.getItem('lead_id') || '',
+                        lead_id: utms.lead_id || localStorage.getItem('lead_id') || '',
                         nome: name,
                         email: email,
                         whatsapp: whatsapp,
@@ -654,9 +655,9 @@
                         arquivo_base64: base64File,
                         arquivo_nome: selectedFile.name,
                         tipo_origem: 'Receita',
-                        utm_source: sessionStorage.getItem('utm_source') || '',
-                        utm_medium: sessionStorage.getItem('utm_medium') || '',
-                        utm_campaign: sessionStorage.getItem('utm_campaign') || ''
+                        utm_source: utms.utm_source || '',
+                        utm_medium: utms.utm_medium || '',
+                        utm_campaign: utms.utm_campaign || ''
                     })
                 });
 
@@ -664,7 +665,7 @@
                 // Suporta múltiplos formatos de retorno (lead_id direto ou leadArr[0].id)
                 const returnedId = res.lead_id || (res.leadArr && res.leadArr[0] && res.leadArr[0].id);
                 if (returnedId) {
-                    sessionStorage.setItem('lead_id', returnedId);
+                    localStorage.setItem('lead_id', returnedId);
                     console.log('[Flow] Lead ID persistido via Receita:', returnedId);
                 }
 

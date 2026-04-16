@@ -113,26 +113,27 @@ async function saveLead(data) {
         window._questionarioLeadData = { nome: data.nome, email: data.email, whatsapp: data.whatsapp, respostas_triagem: data };
 
         // Integração para captura de lead
+        const utms = window.getUtmParams ? window.getUtmParams() : {};
         const response = await fetch('https://n8n.srv1586236.hstgr.cloud/webhook/novo-questionario', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 tipo: 'Novo Lead - Avaliação Gratuita',
-                lead_id: sessionStorage.getItem('lead_id') || '',
+                lead_id: utms.lead_id || localStorage.getItem('lead_id') || '',
                 nome: data.nome,
                 whatsapp: data.whatsapp,
                 email: data.email,
                 respostas_triagem: data,
                 tipo_origem: 'Questionário',
-                utm_source: sessionStorage.getItem('utm_source') || '',
-                utm_medium: sessionStorage.getItem('utm_medium') || '',
-                utm_campaign: sessionStorage.getItem('utm_campaign') || ''
+                utm_source: utms.utm_source || '',
+                utm_medium: utms.utm_medium || '',
+                utm_campaign: utms.utm_campaign || ''
             })
         });
 
         const res = await response.json();
         if (res.lead_id) {
-            sessionStorage.setItem('lead_id', res.lead_id);
+            localStorage.setItem('lead_id', res.lead_id);
             console.log('[Flow] Lead ID persistido:', res.lead_id);
         }
 
@@ -336,26 +337,27 @@ function showResults() {
             <button class="btn btn-primary" style="margin-top: 20px; width: 100%;" onclick="
                 const lead = window._questionarioLeadData || {};
                 const html = window._questionarioRespostasHtml || '';
+                const utms = window.getUtmParams ? window.getUtmParams() : {};
                 fetch('https://n8n.srv1586236.hstgr.cloud/webhook/novo-questionario', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         tipo: 'Questionário Respondido',
-                        lead_id: sessionStorage.getItem('lead_id') || '',
+                        lead_id: utms.lead_id || localStorage.getItem('lead_id') || '',
                         nome: lead.nome || 'Cliente',
                         email: lead.email || '',
                         whatsapp: lead.whatsapp || '',
                         respostas_html: html,
                         respostas_triagem: userData,
                         tipo_origem: 'Questionário',
-                        utm_source: sessionStorage.getItem('utm_source') || '',
-                        utm_medium: sessionStorage.getItem('utm_medium') || '',
-                        utm_campaign: sessionStorage.getItem('utm_campaign') || ''
+                        utm_source: utms.utm_source || '',
+                        utm_medium: utms.utm_medium || '',
+                        utm_campaign: utms.utm_campaign || ''
                     })
                 })
                 .then(r => r.json())
                 .then(res => {
-                    if (res.lead_id) sessionStorage.setItem('lead_id', res.lead_id);
+                    if (res.lead_id) localStorage.setItem('lead_id', res.lead_id);
                 })
                 .catch(e => console.warn('[n8n]', e))
                 .finally(() => {

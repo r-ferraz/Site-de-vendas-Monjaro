@@ -691,6 +691,7 @@
             finishBtn.disabled = true;
             finishBtn.innerText = 'Processando...';
 
+            const utms = window.getUtmParams ? window.getUtmParams() : {};
             const leadData = {
                 email: document.getElementById('checkout-email').value,
                 whatsapp: document.getElementById('checkout-tel').value,
@@ -705,18 +706,18 @@
                 tem_receita: receitaStatus,
                 status: 'Processando Pagamento',
                 tipo_origem: 'Checkout Transparente',
-                utm_source: sessionStorage.getItem('utm_source') || '',
-                utm_medium: sessionStorage.getItem('utm_medium') || '',
-                utm_campaign: sessionStorage.getItem('utm_campaign') || '',
-                utm_term: sessionStorage.getItem('utm_term') || '',
-                utm_content: sessionStorage.getItem('utm_content') || ''
+                utm_source: utms.utm_source || '',
+                utm_medium: utms.utm_medium || '',
+                utm_campaign: utms.utm_campaign || '',
+                utm_term: utms.utm_term || '',
+                utm_content: utms.utm_content || ''
             };
 
             try {
                 finishBtn.innerText = 'Validando...';
                 
                 const webhookPayload = {
-                    lead_id: sessionStorage.getItem('lead_id') || '',
+                    lead_id: utms.lead_id || localStorage.getItem('lead_id') || '',
                     billingType: currentPaymentMethod,
                     name: currentPaymentMethod === 'CREDIT_CARD' ? document.getElementById('card-name').value : 'Cliente',
                     email: leadData.email,
