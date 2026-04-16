@@ -12,30 +12,32 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            min-height: 80vh;
+            min-height: calc(100vh - 80px); /* Ajustado para considerar o header */
             text-align: center;
-            padding: 40px 20px;
+            padding: 20px;
         }
         .error-icon {
-            width: 80px;
-            height: 80px;
-            background: #ef4444; /* Vermelho vibrante */
+            width: 70px;
+            height: 70px;
+            background: #ef4444;
             color: white;
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 40px;
-            margin-bottom: 30px;
+            font-size: 35px;
+            margin-bottom: 20px;
+            flex-shrink: 0;
             animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both;
         }
         .order-card {
             background: white;
-            padding: 40px;
+            padding: 30px;
             border-radius: 24px;
             box-shadow: 0 10px 30px rgba(0,0,0,0.05);
             max-width: 500px;
             width: 100%;
+            box-sizing: border-box;
         }
         @keyframes shake {
             10%, 90% { transform: translate3d(-1px, 0, 0); }
@@ -49,9 +51,12 @@
             color: #c53030;
             border-radius: 12px;
             padding: 15px;
-            margin-bottom: 30px;
-            font-size: 0.9rem;
+            margin: 0 auto 25px;
+            font-size: 0.95rem;
             text-align: left;
+            word-break: break-word;
+            overflow-wrap: anywhere;
+            line-height: 1.5;
         }
     </style>
 </head>
